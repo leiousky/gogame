@@ -1,8 +1,8 @@
 package impl
 
 import (
-	"mygame/public/define"
-	"mygame/public/iface"
+	"games/public/define"
+	"games/public/iface"
 )
 
 /// <summary>

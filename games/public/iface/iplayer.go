@@ -1,6 +1,6 @@
 package iface
 
-import "mygame/public/define"
+import "games/public/define"
 
 /// <summary>
 /// 玩家接口

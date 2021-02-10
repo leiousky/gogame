@@ -1,9 +1,9 @@
 package impl
 
 import (
-	"mygame/core"
-	"mygame/public/define"
-	"mygame/public/iface"
+	"games/core"
+	"games/public/define"
+	"games/public/iface"
 	"sync"
 )
 

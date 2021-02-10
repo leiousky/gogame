@@ -1,6 +1,6 @@
 package iface
 
-import "mygame/public/define"
+import "games/public/define"
 
 /// <summary>
 /// 机器人代理接口，子游戏机器人逻辑继承

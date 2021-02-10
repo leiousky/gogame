@@ -1,7 +1,7 @@
 package core
 
 import (
-	"mygame/comm/utils"
+	"games/comm/utils"
 	"os"
 	"os/signal"
 )

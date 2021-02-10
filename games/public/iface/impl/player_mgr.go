@@ -2,7 +2,7 @@ package impl
 
 import (
 	"fmt"
-	"mygame/public/iface"
+	"games/public/iface"
 	"sync"
 )
 

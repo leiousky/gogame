@@ -1,6 +1,6 @@
 package service
 
-import "mygame/core"
+import "games/core"
 
 type Sentry struct {
 	c    core.IProc

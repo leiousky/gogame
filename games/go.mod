@@ -1,4 +1,4 @@
-module mygame
+module games
 
 go 1.15
 

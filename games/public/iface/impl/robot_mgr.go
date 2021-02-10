@@ -2,9 +2,9 @@ package impl
 
 import (
 	"fmt"
+	"games/public/define"
+	"games/public/iface"
 	"math/rand"
-	"mygame/public/define"
-	"mygame/public/iface"
 	"sync"
 )
 

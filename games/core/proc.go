@@ -3,8 +3,9 @@ package core
 import (
 	"errors"
 	"fmt"
-	"mygame/comm/utils"
-	timer "mygame/core/timerv2"
+	"games/comm/utils"
+	timer "games/core/timerv2"
+
 	"runtime"
 	"sync"
 	"time"

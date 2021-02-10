@@ -1,12 +1,12 @@
 package main
 
 import (
-	"mygame/core"
-	timer "mygame/core/timerv2"
-	"mygame/public/define"
-	"mygame/public/iface/impl"
-	"mygame/service"
-	"mygame/sub/game_dragon_tiger"
+	"games/core"
+	timer "games/core/timerv2"
+	"games/public/define"
+	"games/public/iface/impl"
+	"games/service"
+	"games/sub/game_dragon_tiger"
 )
 
 func main() {

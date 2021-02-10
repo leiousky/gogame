@@ -1,9 +1,9 @@
 package game_dragon_tiger
 
 import (
+	timer "games/core/timerv2"
+	"games/public/iface"
 	"log"
-	timer "mygame/core/timerv2"
-	"mygame/public/iface"
 )
 
 /// <summary>

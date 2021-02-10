@@ -2,9 +2,10 @@ package timer
 
 import (
 	"fmt"
-	"github.com/robfig/cron"
 	"strings"
 	"testing"
+
+	"github.com/robfig/cron"
 )
 
 //每隔5秒执行一次：*/5 * * * * ?
@@ -24,15 +25,15 @@ func TestCron(t *testing.T) {
 	*/
 	// 高级写发@every 5s  每5秒运行一次
 	_, err := s.CreatCronFunc("@every 5s", func() {
-		logger.Info("每5秒执行一次")
+		fmt.Println("每5秒执行一次")
 	})
 	// 匹配规则类似 linux 中 crontab 但是多一位输入 首位表示秒
 	cronId, err := s.CreatCronFunc("*/1 * * * * ?", func() {
-		logger.Info("每秒执行1次")
+		fmt.Println("每秒执行1次")
 	})
 
 	_, err = s.CreatCronFunc("0 */1 * * * *", func() {
-		logger.Warn("每分钟执行1次")
+		fmt.Println("每分钟执行1次")
 		// 删除一个定时任务
 		s.DelCronFunc(cronId)
 	})

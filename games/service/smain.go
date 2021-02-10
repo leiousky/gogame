@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"mygame/comm/utils"
-	"mygame/core"
+	"games/comm/utils"
+	"games/core"
 )
 
 type sMain struct {

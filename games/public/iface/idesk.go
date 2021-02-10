@@ -1,8 +1,8 @@
 package iface
 
 import (
-	"mygame/core"
-	"mygame/public/define"
+	"games/core"
+	"games/public/define"
 )
 
 /// <summary>
