@@ -1,0 +1,8 @@
+.DS_Store
+.idea
+*.exe
+*.log
+*.vscode
+*.idea
+games/baccarat_game/baccaratexec
+log/
