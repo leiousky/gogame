@@ -10,12 +10,12 @@ import (
 /// 邮槽管理器接口
 /// <summary>
 type IMailbox interface {
-	/// 初始化若干邮槽
-	Init(creator IWorkerCreator, num int)
-	/// 添加邮槽
-	Add(creator IWorkerCreator) ISlot
+	/// 添加若干邮槽
+	Add(creator IWorkerCreator, num int)
+	/// 添加一个邮槽
+	AddOne(creator IWorkerCreator) ISlot
 	/// 遍历每个邮槽
-	Range(cb func(ISlot))
+	Range(cb func(ISlot, int))
 	/// 启动所有邮槽协程处理
 	Start()
 	/// 获取下一个邮槽
@@ -41,26 +41,26 @@ func NewMailBox() IMailbox {
 	return &Mailbox{next: 0}
 }
 
-/// 初始化若干邮槽
-func (s *Mailbox) Init(creator IWorkerCreator, num int) {
+/// 添加若干邮槽
+func (s *Mailbox) Add(creator IWorkerCreator, num int) {
 	for i := 0; i < num; i++ {
 		slot := NewMsgSlot(creator)
 		s.slots = append(s.slots, slot)
 	}
 }
 
-/// 添加邮槽
-func (s *Mailbox) Add(creator IWorkerCreator) ISlot {
+/// 添加一个邮槽
+func (s *Mailbox) AddOne(creator IWorkerCreator) ISlot {
 	slot := NewMsgSlot(creator)
 	s.slots = append(s.slots, slot)
 	return slot
 }
 
 /// 遍历每个邮槽
-func (s *Mailbox) Range(cb func(ISlot)) {
+func (s *Mailbox) Range(cb func(ISlot, int)) {
 	utils.SafeCall(func() {
-		for _, slot := range s.slots {
-			cb(slot)
+		for i, slot := range s.slots {
+			cb(slot, i)
 		}
 	})
 }

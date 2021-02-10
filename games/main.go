@@ -3,6 +3,7 @@ package main
 import (
 	"games/core"
 	timer "games/core/timerv2"
+	"games/db"
 	"games/public/define"
 	"games/public/iface/impl"
 	"games/service"
@@ -39,35 +40,40 @@ func main() {
 	RoomInfo.EnableRobot = true                         //开启机器人
 	RoomInfo.Chips = []int64{1, 10, 50, 100, 500, 1000} //桌子筹码配置
 
-	//创建邮槽管理器
+	//step.1 创建邮槽管理器
 	mailbox = core.NewMailBox()
 
-	//初始化若干邮槽
-	mailbox.Init(service.NewSentryCreator(), int(RoomInfo.DeskCount))
+	//step.1.1 添加若干邮槽(桌子业务)
+	mailbox.Add(service.NewSentryCreator(), int(RoomInfo.DeskCount))
 
-	//桌子管理器创建n张桌子
+	//step.1.2 桌子管理器创建n张桌子
 	impl.DeskMgr().Init(
 		&GameInfo, &RoomInfo, mailbox, //为每张桌子分配邮槽
 		game_dragon_tiger.NewDeskDelegateCreator()) //子游戏桌子
 
 	//如果开启机器人
 	if RoomInfo.EnableRobot {
-		//机器人管理器创建若干机器人
+		//step.1.3 机器人管理器创建若干机器人
 		impl.RobotMgr().Init(
 			&GameInfo, &RoomInfo,
 			game_dragon_tiger.NewRobotDelegateCreator()) //子游戏机器人
 	}
 
-	//启动邮槽协程处理
+	//step.2 添加若干邮槽(db/redis业务)
+	mailbox.Add(db.NewSentryCreator(), 12)
+
+	//step.3 启动邮槽协程处理
 	mailbox.Start()
 
 	//如果开启机器人
 	if RoomInfo.EnableRobot {
-		//开启机器人入桌检查
-		mailbox.Range(func(slot core.ISlot) {
-			timer := slot.GetProc().GetTimer().(*timer.SafeTimerScheduel)
-			worker := slot.GetProc().GetWorker().(*service.Sentry)
-			timer.CreatCronFunc("@every 1s", worker.OnTick)
+		//step.4 开启机器人入桌检查
+		mailbox.Range(func(slot core.ISlot, i int) {
+			if i < int(RoomInfo.DeskCount) {
+				timer := slot.GetProc().GetTimer().(*timer.SafeTimerScheduel)
+				worker := slot.GetProc().GetWorker().(*service.Sentry)
+				timer.CreatCronFunc("@every 1s", worker.OnTick)
+			}
 		})
 	}
 	//等待推出
