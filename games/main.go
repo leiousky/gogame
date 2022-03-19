@@ -10,6 +10,8 @@ import (
 	"games/sub/game_dragon_tiger"
 )
 
+//go mod init games
+//go mod tidy
 func main() {
 
 	var GameInfo define.GameInfo //游戏类型
