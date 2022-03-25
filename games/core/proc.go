@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"games/comm/utils"
+	"games/core/msq"
 	"games/core/net"
 	timer "games/core/timerv2"
 
@@ -40,6 +41,8 @@ type Proc struct {
 	worker IWorker                  //业务处理
 	args   []interface{}            //业务参数
 	msq    chan interface{}         //消息队列
+	wsq    msq.MsgQueue             //写消息队列
+	rsq    msq.MsgQueue             //读消息队列
 	cbs    []func()                 //空闲回调
 	lock   *sync.RWMutex            //cbs锁
 	exit   chan *struct{}           //退出处理，多了chan
