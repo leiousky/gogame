@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"games/comm/utils"
+	"games/core/net"
 	timer "games/core/timerv2"
 
 	"runtime"
@@ -154,7 +155,7 @@ func (s *Proc) Run() {
 		case data := <-s.msq:
 			t1 := time.Now()
 			cmd := uint32(0)
-			var peer Session
+			var peer net.Session
 			worker.OnMessage(cmd, data, peer)
 			duration := time.Since(t1)
 			if duration > time.Second {

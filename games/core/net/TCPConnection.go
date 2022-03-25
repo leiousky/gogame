@@ -2,9 +2,9 @@ package net
 
 import (
 	"games/comm/utils"
-	"games/core"
 	"games/core/msq"
-	"games/core/transmit"
+	"games/core/net/transmit"
+
 	"log"
 	"net"
 	"sync"
@@ -17,15 +17,15 @@ import (
 /// TCPConnection TCP/WS连接会话
 /// <summary>
 type TCPConnection struct {
-	SesID         int64
-	conn          interface{}
-	context       map[int]interface{}
-	closing       int64
-	Wg            sync.WaitGroup
-	WMsq          msq.MsgQueue      //写队列
-	RMsq          msq.MsgQueue      //读队列
-	Channel       transmit.IChannel //消息传输协议
-	slot          core.ISlot        //处理单元cell
+	SesID   int64
+	conn    interface{}
+	context map[int]interface{}
+	closing int64
+	Wg      sync.WaitGroup
+	WMsq    msq.MsgQueue      //写队列
+	RMsq    msq.MsgQueue      //读队列
+	Channel transmit.IChannel //消息传输协议
+	//slot          core.ISlot        //处理单元cell
 	onConnected   OnConnected
 	onClosed      OnClosed
 	onMessage     OnMessage
