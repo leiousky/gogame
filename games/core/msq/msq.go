@@ -1,7 +1,7 @@
-package core
+package msq
 
 /// <summary>
-// 消息队列
+/// MsgQueue 消息队列
 /// <summary>
 type MsgQueue interface {
 	//入队列

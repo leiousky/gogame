@@ -154,11 +154,11 @@ func (s *Proc) Run() {
 		case data := <-s.msq:
 			t1 := time.Now()
 			cmd := uint32(0)
-			var peer interface{}
+			var peer Session
 			worker.OnMessage(cmd, data, peer)
 			duration := time.Since(t1)
 			if duration > time.Second {
-				fmt.Printf("elapsed:v% msg:%v", duration, data)
+				//fmt.Printf("elapsed:v% msg:%v", duration, data)
 			}
 		default:
 			//处理空闲回调
