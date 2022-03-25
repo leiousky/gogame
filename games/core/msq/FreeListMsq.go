@@ -10,13 +10,13 @@ import (
 /// FreeListMsq 非阻塞链表类型
 /// <summary>
 type FreeListMsq struct {
-	Msgs *list.List
-	l    *sync.Mutex
-	n    int64
+	msq *list.List
+	l   *sync.Mutex
+	n   int64
 }
 
 func NewFreeListMsq() MsgQueue {
-	s := &FreeListMsq{Msgs: list.New(),
+	s := &FreeListMsq{msq: list.New(),
 		l: &sync.Mutex{}}
 	return s
 }
@@ -28,7 +28,7 @@ func (s *FreeListMsq) EnableNonBlocking(bv bool) {
 func (s *FreeListMsq) Push(msg interface{}) {
 	{
 		s.l.Lock()
-		s.Msgs.PushBack(msg)
+		s.msq.PushBack(msg)
 		s.l.Unlock()
 		atomic.AddInt64(&s.n, 1)
 	}
@@ -37,14 +37,14 @@ func (s *FreeListMsq) Push(msg interface{}) {
 func (s *FreeListMsq) Pop() (msg interface{}, exit bool) {
 	{
 		s.l.Lock()
-		if elem := s.Msgs.Front(); elem != nil {
+		if elem := s.msq.Front(); elem != nil {
 			msg = elem.Value
 			if msg == nil {
 				exit = true
 				s.reset()
 			} else {
 				atomic.AddInt64(&s.n, -1)
-				s.Msgs.Remove(elem)
+				s.msq.Remove(elem)
 			}
 		}
 		s.l.Unlock()
@@ -56,10 +56,10 @@ func (s *FreeListMsq) Pick() (msgs []interface{}, exit bool) {
 	{
 		s.l.Lock()
 		var next *list.Element
-		for elem := s.Msgs.Front(); elem != nil; elem = next {
+		for elem := s.msq.Front(); elem != nil; elem = next {
 			next = elem.Next()
 			msg := elem.Value
-			s.Msgs.Remove(elem)
+			s.msq.Remove(elem)
 			if msg == nil {
 				exit = true
 				break
@@ -82,9 +82,13 @@ func (s *FreeListMsq) Signal() {
 
 func (s *FreeListMsq) reset() {
 	var next *list.Element
-	for elem := s.Msgs.Front(); elem != nil; elem = next {
+	for elem := s.msq.Front(); elem != nil; elem = next {
 		next = elem.Next()
-		s.Msgs.Remove(elem)
+		s.msq.Remove(elem)
 	}
 	atomic.StoreInt64(&s.n, 0)
+}
+
+func (s *FreeListMsq) Close() {
+
 }

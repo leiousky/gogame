@@ -9,25 +9,25 @@ import (
 /// FreeChanMsq 非阻塞chan类型
 /// <summary>
 type FreeChanMsq struct {
-	Msgs chan interface{}
-	n    int64
+	msq chan interface{}
+	n   int64
 }
 
 func NewFreeChanMsq() MsgQueue {
-	return &FreeChanMsq{Msgs: make(chan interface{}, 9000)}
+	return &FreeChanMsq{msq: make(chan interface{}, 9000)}
 }
 
 func (s *FreeChanMsq) Push(msg interface{}) {
-	s.Msgs <- msg
+	s.msq <- msg
 	atomic.AddInt64(&s.n, 1)
 }
 
 func (s *FreeChanMsq) Pop() (msg interface{}, exit bool) {
 	select {
-	case q := <-s.Msgs:
+	case q := <-s.msq:
 		{
 			if q == nil {
-				close(s.Msgs)
+				close(s.msq)
 				exit = true
 				break
 			} else {
@@ -61,4 +61,10 @@ func (s *FreeChanMsq) Signal() {
 }
 
 func (s *FreeChanMsq) EnableNonBlocking(bv bool) {
+}
+
+func (s *FreeChanMsq) Close() {
+	if s.msq != nil {
+		close(s.msq)
+	}
 }

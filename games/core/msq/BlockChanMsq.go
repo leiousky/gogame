@@ -17,27 +17,27 @@ const (
 /// BlockChanMsq chan类型
 /// <summary>
 type BlockChanMsq struct {
-	Msgs        chan interface{}
+	msq         chan interface{}
 	signal      chan bool
 	n           int64
 	nonblocking int32
 }
 
 func NewBlockChanMsq() MsgQueue {
-	return &BlockChanMsq{Msgs: make(chan interface{}, 100), signal: make(chan bool, 1)}
+	return &BlockChanMsq{msq: make(chan interface{}, 100), signal: make(chan bool, 1)}
 }
 
 func (s *BlockChanMsq) Push(msg interface{}) {
-	s.Msgs <- msg
+	s.msq <- msg
 	atomic.AddInt64(&s.n, 1)
 }
 
 func (s *BlockChanMsq) blockPop() (msg interface{}, exit bool) {
 	select {
-	case q := <-s.Msgs:
+	case q := <-s.msq:
 		{
 			if q == nil {
-				close(s.Msgs)
+				close(s.msq)
 				close(s.signal)
 				exit = true
 				break
@@ -53,10 +53,10 @@ func (s *BlockChanMsq) blockPop() (msg interface{}, exit bool) {
 
 func (s *BlockChanMsq) nonblockPop() (msg interface{}, exit bool) {
 	select {
-	case q := <-s.Msgs:
+	case q := <-s.msq:
 		{
 			if q == nil {
-				close(s.Msgs)
+				close(s.msq)
 				close(s.signal)
 				exit = true
 				break
@@ -116,6 +116,12 @@ func (s *BlockChanMsq) EnableNonBlocking(bv bool) {
 
 func (s *BlockChanMsq) signalx() {
 	s.signal <- true
+}
+
+func (s *BlockChanMsq) Close() {
+	if s.msq != nil {
+		close(s.msq)
+	}
 }
 
 var msq = NewBlockChanMsq()

@@ -16,4 +16,6 @@ type MsgQueue interface {
 	Signal()
 	//阻塞或非阻塞设置
 	EnableNonBlocking(bv bool)
+	//关闭清理
+	Close()
 }

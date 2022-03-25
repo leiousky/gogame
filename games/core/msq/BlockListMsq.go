@@ -10,7 +10,7 @@ import (
 /// BlockListMsq 链表类型
 /// <summary>
 type BlockListMsq struct {
-	Msgs        *list.List
+	msq         *list.List
 	l           *sync.Mutex
 	c           *sync.Cond
 	n           int64
@@ -18,7 +18,7 @@ type BlockListMsq struct {
 }
 
 func NewBlockListMsq() MsgQueue {
-	s := &BlockListMsq{Msgs: list.New(),
+	s := &BlockListMsq{msq: list.New(),
 		l: &sync.Mutex{}}
 	s.c = sync.NewCond(s.l)
 	return s
@@ -38,7 +38,7 @@ func (s *BlockListMsq) EnableNonBlocking(bv bool) {
 func (s *BlockListMsq) Push(msg interface{}) {
 	{
 		s.l.Lock()
-		s.Msgs.PushBack(msg)
+		s.msq.PushBack(msg)
 		s.l.Unlock()
 	}
 	atomic.AddInt64(&s.n, 1)
@@ -48,20 +48,20 @@ func (s *BlockListMsq) Push(msg interface{}) {
 func (s *BlockListMsq) Pop() (msg interface{}, exit bool) {
 	{
 		s.l.Lock()
-		if !s.nonblocking && s.Msgs.Len() == 0 {
+		if !s.nonblocking && s.msq.Len() == 0 {
 			s.c.Wait()
 		}
 		s.l.Unlock()
 	}
 	{
 		s.l.Lock()
-		if elem := s.Msgs.Front(); elem != nil {
+		if elem := s.msq.Front(); elem != nil {
 			msg = elem.Value
 			if msg == nil {
 				exit = true
 				s.reset()
 			} else {
-				s.Msgs.Remove(elem)
+				s.msq.Remove(elem)
 			}
 			atomic.AddInt64(&s.n, -1)
 		}
@@ -73,7 +73,7 @@ func (s *BlockListMsq) Pop() (msg interface{}, exit bool) {
 func (s *BlockListMsq) Pick() (msgs []interface{}, exit bool) {
 	{
 		s.l.Lock()
-		if !s.nonblocking && s.Msgs.Len() == 0 {
+		if !s.nonblocking && s.msq.Len() == 0 {
 			s.c.Wait()
 		}
 		s.l.Unlock()
@@ -81,10 +81,10 @@ func (s *BlockListMsq) Pick() (msgs []interface{}, exit bool) {
 	{
 		s.l.Lock()
 		var next *list.Element
-		for elem := s.Msgs.Front(); elem != nil; elem = next {
+		for elem := s.msq.Front(); elem != nil; elem = next {
 			next = elem.Next()
 			msg := elem.Value
-			s.Msgs.Remove(elem)
+			s.msq.Remove(elem)
 			if msg == nil {
 				exit = true
 				break
@@ -111,9 +111,13 @@ func (s *BlockListMsq) Signal() {
 
 func (s *BlockListMsq) reset() {
 	var next *list.Element
-	for elem := s.Msgs.Front(); elem != nil; elem = next {
+	for elem := s.msq.Front(); elem != nil; elem = next {
 		next = elem.Next()
-		s.Msgs.Remove(elem)
+		s.msq.Remove(elem)
 	}
 	atomic.StoreInt64(&s.n, 0)
+}
+
+func (s *BlockListMsq) Close() {
+
 }
