@@ -1,7 +1,7 @@
 package net
 
 import (
-	"games/core/transmit"
+	"games/core/net/transmit"
 	"net"
 	"sync"
 
