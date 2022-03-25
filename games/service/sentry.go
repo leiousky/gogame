@@ -1,6 +1,9 @@
 package service
 
-import "games/core"
+import (
+	"games/core"
+	"games/core/net"
+)
 
 type Sentry struct {
 	c    core.IProc
@@ -22,13 +25,40 @@ func (s *Sentry) OnTick() {
 	s.main.OnTick()
 }
 
-func (s *Sentry) OnMessage(cmd uint32, msg interface{}, session core.Session) {
+func (s *Sentry) OnConnected(peer net.Session, Type net.SesType) {
+
+}
+
+func (s *Sentry) OnClosed(peer net.Session, Type net.SesType) {
+
+}
+
+func (s *Sentry) OnMessage(cmd uint32, msg interface{}, session net.Session) {
 	s.main.OnMessage(cmd, msg, session)
 }
 
-//func (s *Sentry) SetProc(c core.IProc) {
-//	s.c = c
-//}
+func (s *Sentry) RunAfter(delay int32, args interface{}) uint32 {
+	return 0
+}
+
+func (s *Sentry) RunAfterWith(delay int32, handler net.TimerCallback, args interface{}) uint32 {
+	return 0
+}
+
+func (s *Sentry) RunEvery(delay, interval int32, args interface{}) uint32 {
+	return 0
+}
+func (s *Sentry) RunEveryWith(delay, interval int32, handler net.TimerCallback, args interface{}) uint32 {
+	return 0
+}
+
+func (s *Sentry) RemoveTimer(timerID uint32) {
+
+}
+
+func (s *Sentry) SetProc(c core.IProc) {
+	s.c = c
+}
 
 func (s *Sentry) GetProc() core.IProc {
 	return s.c
