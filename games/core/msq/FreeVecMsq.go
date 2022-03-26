@@ -23,21 +23,22 @@ func (s *FreeVecMsq) EnableNonBlocking(bv bool) {
 
 }
 
-func (s *FreeVecMsq) Push(msg interface{}) {
+func (s *FreeVecMsq) Push(data interface{}) error {
 	{
 		s.l.Lock()
-		s.msq = append(s.msq, msg)
+		s.msq = append(s.msq, data)
 		s.l.Unlock()
 		atomic.AddInt64(&s.n, 1)
 	}
+	return nil
 }
 
-func (s *FreeVecMsq) Pop() (msg interface{}, exit bool) {
+func (s *FreeVecMsq) Pop() (data interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if len(s.msq) > 0 {
-			msg = s.msq[0]
-			if msg == nil {
+			data = s.msq[0]
+			if data == nil {
 				exit = true
 				s.reset()
 			} else {
@@ -50,15 +51,15 @@ func (s *FreeVecMsq) Pop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *FreeVecMsq) Pick() (msgs []interface{}, exit bool) {
+func (s *FreeVecMsq) Pick() (v []interface{}, exit bool) {
 	{
 		s.l.Lock()
-		for _, msg := range s.msq {
-			if msg == nil {
+		for _, data := range s.msq {
+			if data == nil {
 				exit = true
 				break
 			} else {
-				msgs = append(msgs, msg)
+				v = append(v, data)
 			}
 		}
 		s.reset()

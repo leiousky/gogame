@@ -35,17 +35,18 @@ func (s *BlockListMsq) EnableNonBlocking(bv bool) {
 	}
 }
 
-func (s *BlockListMsq) Push(msg interface{}) {
+func (s *BlockListMsq) Push(data interface{}) error {
 	{
 		s.l.Lock()
-		s.msq.PushBack(msg)
+		s.msq.PushBack(data)
 		s.l.Unlock()
 	}
 	atomic.AddInt64(&s.n, 1)
 	s.c.Signal()
+	return nil
 }
 
-func (s *BlockListMsq) Pop() (msg interface{}, exit bool) {
+func (s *BlockListMsq) Pop() (data interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if !s.nonblocking && s.msq.Len() == 0 {
@@ -56,8 +57,8 @@ func (s *BlockListMsq) Pop() (msg interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if elem := s.msq.Front(); elem != nil {
-			msg = elem.Value
-			if msg == nil {
+			data = elem.Value
+			if data == nil {
 				exit = true
 				s.reset()
 			} else {
@@ -70,7 +71,7 @@ func (s *BlockListMsq) Pop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *BlockListMsq) Pick() (msgs []interface{}, exit bool) {
+func (s *BlockListMsq) Pick() (v []interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if !s.nonblocking && s.msq.Len() == 0 {
@@ -83,13 +84,13 @@ func (s *BlockListMsq) Pick() (msgs []interface{}, exit bool) {
 		var next *list.Element
 		for elem := s.msq.Front(); elem != nil; elem = next {
 			next = elem.Next()
-			msg := elem.Value
+			data := elem.Value
 			s.msq.Remove(elem)
-			if msg == nil {
+			if data == nil {
 				exit = true
 				break
 			} else {
-				msgs = append(msgs, msg)
+				v = append(v, data)
 			}
 		}
 

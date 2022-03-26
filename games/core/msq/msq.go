@@ -5,7 +5,7 @@ package msq
 /// <summary>
 type MsgQueue interface {
 	//入队列
-	Push(interface{})
+	Push(interface{}) error
 	//出队列
 	Pop() (interface{}, bool)
 	//掏空队列

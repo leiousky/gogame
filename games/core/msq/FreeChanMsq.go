@@ -1,6 +1,9 @@
 package msq
 
 import (
+	"errors"
+	"fmt"
+	"games/comm/utils"
 	"sync/atomic"
 	"time"
 )
@@ -11,18 +14,28 @@ import (
 type FreeChanMsq struct {
 	msq chan interface{}
 	n   int64
+	tid uint32
 }
 
 func NewFreeChanMsq() MsgQueue {
-	return &FreeChanMsq{msq: make(chan interface{}, 9000)}
+	return &FreeChanMsq{
+		msq: make(chan interface{}, 9000),
+		tid: utils.GoroutineID(),
+	}
 }
 
-func (s *FreeChanMsq) Push(msg interface{}) {
-	s.msq <- msg
-	atomic.AddInt64(&s.n, 1)
+func (s *FreeChanMsq) Push(data interface{}) error {
+	if len(s.msq) == cap(s.msq) {
+		return errors.New(fmt.Sprintf("pid[%v]FreeChanMsq is full", s.tid))
+	}
+	select {
+	case s.msq <- data:
+		atomic.AddInt64(&s.n, 1)
+	}
+	return nil
 }
 
-func (s *FreeChanMsq) Pop() (msg interface{}, exit bool) {
+func (s *FreeChanMsq) Pop() (data interface{}, exit bool) {
 	select {
 	case q := <-s.msq:
 		{
@@ -31,7 +44,7 @@ func (s *FreeChanMsq) Pop() (msg interface{}, exit bool) {
 				exit = true
 				break
 			} else {
-				msg = q
+				data = q
 			}
 			atomic.AddInt64(&s.n, -1)
 		}
@@ -44,11 +57,11 @@ func (s *FreeChanMsq) Pop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *FreeChanMsq) Pick() (msgs []interface{}, exit bool) {
-	msg, e := s.Pop()
+func (s *FreeChanMsq) Pick() (v []interface{}, exit bool) {
+	data, e := s.Pop()
 	exit = e
-	if msg != nil && !exit {
-		msgs = append(msgs, msg)
+	if data != nil && !exit {
+		v = append(v, data)
 	}
 	return
 }

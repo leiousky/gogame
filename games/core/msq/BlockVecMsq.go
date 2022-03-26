@@ -33,17 +33,18 @@ func (s *BlockVecMsq) EnableNonBlocking(bv bool) {
 	}
 }
 
-func (s *BlockVecMsq) Push(msg interface{}) {
+func (s *BlockVecMsq) Push(data interface{}) error {
 	{
 		s.l.Lock()
-		s.msq = append(s.msq, msg)
+		s.msq = append(s.msq, data)
 		s.l.Unlock()
 		atomic.AddInt64(&s.n, 1)
 	}
 	s.c.Signal()
+	return nil
 }
 
-func (s *BlockVecMsq) Pop() (msg interface{}, exit bool) {
+func (s *BlockVecMsq) Pop() (data interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if !s.nonblocking && len(s.msq) == 0 {
@@ -54,8 +55,8 @@ func (s *BlockVecMsq) Pop() (msg interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if len(s.msq) > 0 {
-			msg = s.msq[0]
-			if msg == nil {
+			data = s.msq[0]
+			if data == nil {
 				exit = true
 				s.reset()
 			} else {
@@ -68,7 +69,7 @@ func (s *BlockVecMsq) Pop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *BlockVecMsq) Pick() (msgs []interface{}, exit bool) {
+func (s *BlockVecMsq) Pick() (v []interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if !s.nonblocking && len(s.msq) == 0 {
@@ -78,12 +79,12 @@ func (s *BlockVecMsq) Pick() (msgs []interface{}, exit bool) {
 	}
 	{
 		s.l.Lock()
-		for _, msg := range s.msq {
-			if msg == nil {
+		for _, data := range s.msq {
+			if data == nil {
 				exit = true
 				break
 			} else {
-				msgs = append(msgs, msg)
+				v = append(v, data)
 			}
 		}
 		s.reset()

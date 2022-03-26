@@ -1,6 +1,8 @@
 package msq
 
 import (
+	"errors"
+	"fmt"
 	"games/comm/utils"
 	"log"
 	"sync/atomic"
@@ -20,19 +22,30 @@ type BlockChanMsq struct {
 	msq         chan interface{}
 	signal      chan bool
 	n           int64
+	tid         uint32
 	nonblocking int32
 }
 
 func NewBlockChanMsq() MsgQueue {
-	return &BlockChanMsq{msq: make(chan interface{}, 100), signal: make(chan bool, 1)}
+	return &BlockChanMsq{
+		msq:    make(chan interface{}, 100),
+		signal: make(chan bool, 1),
+		tid:    utils.GoroutineID(),
+	}
 }
 
-func (s *BlockChanMsq) Push(msg interface{}) {
-	s.msq <- msg
-	atomic.AddInt64(&s.n, 1)
+func (s *BlockChanMsq) Push(data interface{}) error {
+	if len(s.msq) == cap(s.msq) {
+		return errors.New(fmt.Sprintf("pid[%v]BlockChanMsq is full", s.tid))
+	}
+	select {
+	case s.msq <- data:
+		atomic.AddInt64(&s.n, 1)
+	}
+	return nil
 }
 
-func (s *BlockChanMsq) blockPop() (msg interface{}, exit bool) {
+func (s *BlockChanMsq) blockPop() (data interface{}, exit bool) {
 	select {
 	case q := <-s.msq:
 		{
@@ -42,7 +55,7 @@ func (s *BlockChanMsq) blockPop() (msg interface{}, exit bool) {
 				exit = true
 				break
 			} else {
-				msg = q
+				data = q
 			}
 			atomic.AddInt64(&s.n, -1)
 		}
@@ -51,7 +64,7 @@ func (s *BlockChanMsq) blockPop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *BlockChanMsq) nonblockPop() (msg interface{}, exit bool) {
+func (s *BlockChanMsq) nonblockPop() (data interface{}, exit bool) {
 	select {
 	case q := <-s.msq:
 		{
@@ -61,7 +74,7 @@ func (s *BlockChanMsq) nonblockPop() (msg interface{}, exit bool) {
 				exit = true
 				break
 			} else {
-				msg = q
+				data = q
 			}
 			atomic.AddInt64(&s.n, -1)
 		}
@@ -71,20 +84,20 @@ func (s *BlockChanMsq) nonblockPop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *BlockChanMsq) Pop() (msg interface{}, exit bool) {
+func (s *BlockChanMsq) Pop() (data interface{}, exit bool) {
 	if KBlocking == atomic.LoadInt32(&s.nonblocking) {
-		msg, exit = s.blockPop()
+		data, exit = s.blockPop()
 	} else {
-		msg, exit = s.nonblockPop()
+		data, exit = s.nonblockPop()
 	}
 	return
 }
 
-func (s *BlockChanMsq) Pick() (msgs []interface{}, exit bool) {
-	msg, e := s.Pop()
+func (s *BlockChanMsq) Pick() (v []interface{}, exit bool) {
+	data, e := s.Pop()
 	exit = e
-	if msg != nil && !exit {
-		msgs = append(msgs, msg)
+	if data != nil && !exit {
+		v = append(v, data)
 	}
 	return
 }

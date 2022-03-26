@@ -25,21 +25,22 @@ func (s *FreeListMsq) EnableNonBlocking(bv bool) {
 
 }
 
-func (s *FreeListMsq) Push(msg interface{}) {
+func (s *FreeListMsq) Push(data interface{}) error {
 	{
 		s.l.Lock()
-		s.msq.PushBack(msg)
+		s.msq.PushBack(data)
 		s.l.Unlock()
 		atomic.AddInt64(&s.n, 1)
 	}
+	return nil
 }
 
-func (s *FreeListMsq) Pop() (msg interface{}, exit bool) {
+func (s *FreeListMsq) Pop() (data interface{}, exit bool) {
 	{
 		s.l.Lock()
 		if elem := s.msq.Front(); elem != nil {
-			msg = elem.Value
-			if msg == nil {
+			data = elem.Value
+			if data == nil {
 				exit = true
 				s.reset()
 			} else {
@@ -52,19 +53,19 @@ func (s *FreeListMsq) Pop() (msg interface{}, exit bool) {
 	return
 }
 
-func (s *FreeListMsq) Pick() (msgs []interface{}, exit bool) {
+func (s *FreeListMsq) Pick() (v []interface{}, exit bool) {
 	{
 		s.l.Lock()
 		var next *list.Element
 		for elem := s.msq.Front(); elem != nil; elem = next {
 			next = elem.Next()
-			msg := elem.Value
+			data := elem.Value
 			s.msq.Remove(elem)
-			if msg == nil {
+			if data == nil {
 				exit = true
 				break
 			} else {
-				msgs = append(msgs, msg)
+				v = append(v, data)
 			}
 		}
 		s.reset()
