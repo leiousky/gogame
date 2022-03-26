@@ -20,6 +20,7 @@ type TCPConnection struct {
 	connID        int64
 	conn          interface{}
 	context       map[int]interface{}
+	connType      SesType
 	closing       int64
 	Wg            sync.WaitGroup
 	wsq           msq.MsgQueue      //写消息队列
@@ -31,17 +32,16 @@ type TCPConnection struct {
 	onWritten     OnWritten
 	onError       OnError
 	closeCallback CloseCallback
-	//reason        int32
-	//sta           int32
 }
 
-func newTCPConnection(conn interface{}, channel transmit.IChannel) Session {
+func newTCPConnection(conn interface{}, connType SesType, channel transmit.IChannel) Session {
 	peer := &TCPConnection{
-		connID:  createSessionID(),
-		conn:    conn,
-		context: map[int]interface{}{},
-		wsq:     msq.NewBlockVecMsq(),
-		Channel: channel}
+		connID:   createSessionID(),
+		conn:     conn,
+		connType: connType,
+		context:  map[int]interface{}{},
+		wsq:      msq.NewBlockVecMsq(),
+		Channel:  channel}
 	return peer
 }
 
@@ -63,6 +63,10 @@ func (s *TCPConnection) IsWebsocket() bool {
 
 func (s *TCPConnection) Conn() interface{} {
 	return s.conn
+}
+
+func (s *TCPConnection) Type() SesType {
+	return s.connType
 }
 
 func (s *TCPConnection) SetContext(key int, val interface{}) {

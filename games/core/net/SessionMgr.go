@@ -8,9 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//
 type SessionMgr interface {
-	Add(conn interface{}) Session
+	Add(conn interface{}, connType SesType) Session
 	Remove(peer Session)
 	Get(sesID int64) Session
 	Count() int64
@@ -18,10 +17,8 @@ type SessionMgr interface {
 	Wait()
 }
 
-//
 var gSessMgr = newSessionMgr()
 
-//
 type defaultSessionMgr struct {
 	peers map[int64]Session
 	l     *sync.Mutex
@@ -29,7 +26,6 @@ type defaultSessionMgr struct {
 	exit  bool
 }
 
-//
 func newSessionMgr() SessionMgr {
 	s := &defaultSessionMgr{l: &sync.Mutex{}, peers: map[int64]Session{}}
 	s.c = sync.NewCond(s.l)
@@ -38,17 +34,16 @@ func newSessionMgr() SessionMgr {
 
 }
 
-//
-func (s *defaultSessionMgr) Add(conn interface{}) Session {
+func (s *defaultSessionMgr) Add(conn interface{}, connType SesType) Session {
 	if !s.exit {
 		if c, ok := conn.(net.Conn); ok {
-			peer := newTCPConnection(c, transmit.NewTCPChannel())
+			peer := newTCPConnection(c, connType, transmit.NewTCPChannel())
 			s.l.Lock()
 			s.peers[peer.ID()] = peer
 			s.l.Unlock()
 			return peer
 		} else if c, ok := conn.(*websocket.Conn); ok {
-			peer := newTCPConnection(c, transmit.NewWSChannel())
+			peer := newTCPConnection(c, connType, transmit.NewWSChannel())
 			s.l.Lock()
 			s.peers[peer.ID()] = peer
 			s.l.Unlock()
@@ -58,7 +53,6 @@ func (s *defaultSessionMgr) Add(conn interface{}) Session {
 	return nil
 }
 
-//
 func (s *defaultSessionMgr) Remove(peer Session) {
 	s.l.Lock()
 	if _, ok := s.peers[peer.ID()]; ok {
@@ -70,7 +64,6 @@ func (s *defaultSessionMgr) Remove(peer Session) {
 	s.l.Unlock()
 }
 
-//
 func (s *defaultSessionMgr) Get(sesID int64) Session {
 	s.l.Lock()
 	if peer, ok := s.peers[sesID]; ok {
@@ -81,12 +74,10 @@ func (s *defaultSessionMgr) Get(sesID int64) Session {
 	return nil
 }
 
-//Count 有效连接数
 func (s *defaultSessionMgr) Count() int64 {
 	return 0
 }
 
-//
 func (s *defaultSessionMgr) Stop() {
 	s.l.Lock()
 	s.exit = true

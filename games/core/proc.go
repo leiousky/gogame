@@ -154,14 +154,18 @@ func (s *Proc) Run() {
 			utils.SafeCall(df.Call)
 		//任务消息
 		case q := <-s.msq:
-			data := q
-			t1 := time.Now()
-			cmd := uint32(0)
-			var peer net.Session
-			worker.OnMessage(cmd, data, peer)
-			duration := time.Since(t1)
-			if duration > time.Second {
-				//fmt.Printf("elapsed:v% msg:%v", duration, data)
+			if q == nil {
+				goto end
+			} else {
+				data := q
+				t1 := time.Now()
+				cmd := uint32(0)
+				var peer net.Session
+				worker.OnMessage(cmd, data, peer)
+				duration := time.Since(t1)
+				if duration > time.Second {
+					//fmt.Printf("elapsed:v% msg:%v", duration, data)
+				}
 			}
 		default:
 			//处理空闲回调
@@ -174,10 +178,10 @@ func (s *Proc) Run() {
 end:
 	log.Printf("proc tid=%v exit...", s.tid)
 	//清理定时器
-	//.......
+
 	//关闭chan通道
-	close(s.exit)
 	close(s.msq)
+	close(s.exit)
 }
 
 /// 退出处理
