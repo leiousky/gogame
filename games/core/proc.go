@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"games/comm/utils"
-	"games/core/msq"
 	"games/core/net"
 	timer "games/core/timerv2"
+	"log"
 
 	"runtime"
 	"sync"
@@ -37,17 +37,15 @@ type IProc interface {
 /// 消息处理器
 /// <summary>
 type Proc struct {
-	tid    uint32                   //协程ID
-	worker IWorker                  //业务处理
-	args   []interface{}            //业务参数
-	msq    chan interface{}         //消息队列
-	wsq    msq.MsgQueue             //写消息队列
-	rsq    msq.MsgQueue             //读消息队列
-	cbs    []func()                 //空闲回调
-	lock   *sync.RWMutex            //cbs锁
-	exit   chan *struct{}           //退出处理，多了chan
-	timer  *timer.SafeTimerScheduel // 协程安全定时器
+	tid    uint32           //协程ID
+	worker IWorker          //业务处理
+	args   []interface{}    //业务参数
+	msq    chan interface{} //消息队列
+	cbs    []func()         //空闲回调
+	lock   *sync.RWMutex    //cbs锁
+	exit   chan *struct{}   //退出处理，多了chan
 	//exit *struct {}   	//退出处理，省掉chan
+	timer *timer.SafeTimerScheduel // 协程安全定时器
 }
 
 /// 创建消息处理器
@@ -151,11 +149,12 @@ func (s *Proc) Run() {
 		//退出处理
 		case <-s.exit:
 			goto end
-			//定时消息
+		//定时消息
 		case df := <-s.timer.Do():
 			utils.SafeCall(df.Call)
 		//任务消息
-		case data := <-s.msq:
+		case q := <-s.msq:
+			data := q
 			t1 := time.Now()
 			cmd := uint32(0)
 			var peer net.Session
@@ -173,6 +172,7 @@ func (s *Proc) Run() {
 		}
 	}
 end:
+	log.Printf("proc tid=%v exit...", s.tid)
 	//清理定时器
 	//.......
 	//关闭chan通道

@@ -17,15 +17,14 @@ import (
 /// TCPConnection TCP/WS连接会话
 /// <summary>
 type TCPConnection struct {
-	SesID   int64
-	conn    interface{}
-	context map[int]interface{}
-	closing int64
-	Wg      sync.WaitGroup
-	WMsq    msq.MsgQueue      //写队列
-	RMsq    msq.MsgQueue      //读队列
-	Channel transmit.IChannel //消息传输协议
-	//slot          core.ISlot        //处理单元cell
+	connID        int64
+	conn          interface{}
+	context       map[int]interface{}
+	closing       int64
+	Wg            sync.WaitGroup
+	wsq           msq.MsgQueue      //写消息队列
+	rsq           msq.MsgQueue      //读消息队列
+	Channel       transmit.IChannel //消息传输协议
 	onConnected   OnConnected
 	onClosed      OnClosed
 	onMessage     OnMessage
@@ -38,16 +37,16 @@ type TCPConnection struct {
 
 func newTCPConnection(conn interface{}, channel transmit.IChannel) Session {
 	peer := &TCPConnection{
-		SesID:   createSessionID(),
+		connID:  createSessionID(),
 		conn:    conn,
 		context: map[int]interface{}{},
-		WMsq:    msq.NewBlockVecMsq(),
+		wsq:     msq.NewBlockVecMsq(),
 		Channel: channel}
 	return peer
 }
 
 func (s *TCPConnection) ID() int64 {
-	return s.SesID
+	return s.connID
 }
 
 func (s *TCPConnection) IsWebsocket() bool {
@@ -129,7 +128,7 @@ func (s *TCPConnection) readLoop() {
 	//对端关闭连接
 	if 0 == atomic.LoadInt64(&s.closing) {
 		//通知写退出
-		s.WMsq.Push(nil)
+		s.wsq.Push(nil)
 	}
 	//等待写退出
 	s.Wg.Wait()
@@ -143,7 +142,7 @@ func (s *TCPConnection) readLoop() {
 func (s *TCPConnection) writeLoop() {
 	utils.CheckPanic()
 	for {
-		msgs, exit := s.WMsq.Pick()
+		msgs, exit := s.wsq.Pick()
 		for _, msg := range msgs {
 			err := s.Channel.OnSendMessage(s.conn, msg)
 			if err != nil {
@@ -170,7 +169,7 @@ func (s *TCPConnection) writeLoop() {
 
 /// 写
 func (s *TCPConnection) Write(msg interface{}) {
-	s.WMsq.Push(msg)
+	s.wsq.Push(msg)
 }
 
 /// 关闭
@@ -178,7 +177,7 @@ func (s *TCPConnection) Close() {
 	//本端关闭连接
 	if 0 == atomic.SwapInt64(&s.closing, 1) && s.conn != nil {
 		//通知写退出
-		s.WMsq.Push(nil)
+		s.wsq.Push(nil)
 	}
 }
 
