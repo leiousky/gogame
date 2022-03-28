@@ -12,7 +12,7 @@ type ISlot interface {
 	//添加worker初始化参数
 	Add(args ...interface{})
 	/// 启动协程并返回消息处理器句柄
-	Schedule() IProc
+	Sched(size int) IProc
 	/// 获取消息处理器句柄
 	GetProc() IProc
 	/// 退出处理
@@ -49,9 +49,9 @@ func (s *Slot) Add(args ...interface{}) {
 }
 
 /// 启动协程并返回消息处理器句柄
-func (s *Slot) Schedule() IProc {
+func (s *Slot) Sched(size int) IProc {
 	if atomic.CompareAndSwapInt32(&s.sta, Idle, Running) {
-		go s.run()
+		go s.run(size)
 	}
 	{
 		s.lock.Lock()
@@ -69,8 +69,8 @@ func (s *Slot) GetProc() IProc {
 }
 
 /// 执行协程处理任务
-func (s *Slot) run() {
-	proc := newMsgProc(s.creator, s.args...)
+func (s *Slot) run(size int) {
+	proc := newMsgProc(s.creator, size, s.args...)
 	s.lock.Lock()
 	s.proc = proc
 	s.cond.Signal()

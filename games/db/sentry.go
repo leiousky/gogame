@@ -7,7 +7,6 @@ import (
 
 type Sentry struct {
 	c    core.IProc
-	d    core.IProc
 	main *sMain
 }
 
@@ -33,47 +32,16 @@ func (s *Sentry) OnClosed(peer net.Session, Type net.SesType) {
 
 }
 
-func (s *Sentry) OnMessage(cmd uint32, msg interface{}, session net.Session) {
-	s.main.OnMessage(cmd, msg, session)
+func (s *Sentry) OnRead(cmd uint32, msg interface{}, session net.Session) {
+	s.main.OnRead(cmd, msg, session)
 }
 
-func (s *Sentry) RunAfter(delay int32, args interface{}) uint32 {
-	return 0
+func (s *Sentry) OnCustom(cmd uint32, msg interface{}, session net.Session) {
+	s.main.OnCustom(cmd, msg, session)
 }
 
-func (s *Sentry) RunAfterWith(delay int32, handler net.TimerCallback, args interface{}) uint32 {
-	return 0
-}
-
-func (s *Sentry) RunEvery(delay, interval int32, args interface{}) uint32 {
-	return 0
-}
-func (s *Sentry) RunEveryWith(delay, interval int32, handler net.TimerCallback, args interface{}) uint32 {
-	return 0
-}
-
-func (s *Sentry) RemoveTimer(timerID uint32) {
-
-}
-
-func (s *Sentry) SetProc(c core.IProc) {
-	s.c = c
-}
-
-func (s *Sentry) GetProc() core.IProc {
-	return s.c
-}
-
-func (s *Sentry) SetDispatcher(c core.IProc) {
-	s.d = c
-}
-
-func (s *Sentry) GetDispatcher() core.IProc {
-	return s.d
-}
-
-func (s *Sentry) ResetDispatcher() {
-	s.d = nil
+func (s *Sentry) OnTimer(timerID uint32, dt int32, args interface{}) bool {
+	return true
 }
 
 type SentryCreator struct {

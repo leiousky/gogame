@@ -14,20 +14,15 @@ const (
 /// TimerWheel 时间轮盘，处理超时会话
 /// <summary>
 type TimerWheel interface {
-	//SetTimer 指定所在定时器
-	SetTimer(t ScopedTimer)
-	//GetTimer 返回所在定时器
-	GetTimer() ScopedTimer
-
-	//UpdateWheel 定时器tick调用
+	/// 定时器tick调用
 	UpdateWheel() (v []int64)
 
-	//PushBucket 登陆成功压入桶
+	/// 登陆成功压入桶
 	PushBucket(val int64, timeout int32) int32
 
-	//UpdateBucket oldcuror 元素当前所在桶位置
-	//UpdateBucket timeout 心跳超时清理时间
-	//UpdateBucket 心跳间隔时间(interval)收到心跳包调用更新桶元素
+	/// oldcuror 元素当前所在桶位置
+	/// timeout 心跳超时清理时间
+	/// 心跳间隔时间(interval)收到心跳包调用更新桶元素
 	UpdateBucket(oldcuror int32, val int64, timeout int32) int32
 }
 
@@ -39,19 +34,16 @@ type Bucket struct {
 	l *sync.Mutex
 }
 
-//
 func newBucket() *Bucket {
 	return &Bucket{v: map[int64]bool{}, l: &sync.Mutex{}}
 }
 
-//
 func (s *Bucket) Add(val int64) {
 	s.l.Lock()
 	s.v[val] = true
 	s.l.Unlock()
 }
 
-//
 func (s *Bucket) Remove(val int64) bool {
 	s.l.Lock()
 	if _, ok := s.v[val]; ok {
@@ -63,7 +55,6 @@ func (s *Bucket) Remove(val int64) bool {
 	return false
 }
 
-//
 func (s *Bucket) Pop() (v []int64) {
 	s.l.Lock()
 	//取出桶内所有id
@@ -82,11 +73,10 @@ func (s *Bucket) Pop() (v []int64) {
 /// timerWheel 时间轮实现
 /// <summary>
 type timerWheel struct {
-	pid    uint32      //协程
-	cursor int32       //秒针
-	size   int32       //轮盘大小 [0 1 2 3 4 5 6 7 8 9] size = 10
-	ring   []*Bucket   //环形数组
-	t      ScopedTimer //所在定时器
+	pid    uint32    //协程
+	cursor int32     //秒针
+	size   int32     //轮盘大小 [0 1 2 3 4 5 6 7 8 9] size = 10
+	ring   []*Bucket //环形数组
 }
 
 /// 轮盘大小(size) >=
@@ -99,16 +89,6 @@ func NewTimerWheel(pid uint32, size int32) TimerWheel {
 		s.ring[i] = newBucket()
 	}
 	return s
-}
-
-/// 指定所在定时器
-func (s *timerWheel) SetTimer(t ScopedTimer) {
-	s.t = t
-}
-
-/// 返回所在定时器
-func (s *timerWheel) GetTimer() ScopedTimer {
-	return s.t
 }
 
 /// 定时器tick调用

@@ -5,7 +5,7 @@ package msq
 /// <summary>
 type MsgQueue interface {
 	//入队列
-	Push(interface{}) error
+	Push(interface{})
 	//出队列
 	Pop() (interface{}, bool)
 	//掏空队列
@@ -16,6 +16,4 @@ type MsgQueue interface {
 	Signal()
 	//阻塞或非阻塞设置
 	EnableNonBlocking(bv bool)
-	//关闭清理
-	Close()
 }

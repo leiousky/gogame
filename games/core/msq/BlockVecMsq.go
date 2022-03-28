@@ -33,7 +33,7 @@ func (s *BlockVecMsq) EnableNonBlocking(bv bool) {
 	}
 }
 
-func (s *BlockVecMsq) Push(data interface{}) error {
+func (s *BlockVecMsq) Push(data interface{}) {
 	{
 		s.l.Lock()
 		s.msq = append(s.msq, data)
@@ -41,7 +41,6 @@ func (s *BlockVecMsq) Push(data interface{}) error {
 		atomic.AddInt64(&s.n, 1)
 	}
 	s.c.Signal()
-	return nil
 }
 
 func (s *BlockVecMsq) Pop() (data interface{}, exit bool) {
@@ -106,8 +105,4 @@ func (s *BlockVecMsq) Signal() {
 func (s *BlockVecMsq) reset() {
 	s.msq = s.msq[0:0]
 	atomic.StoreInt64(&s.n, 0)
-}
-
-func (s *BlockVecMsq) Close() {
-
 }

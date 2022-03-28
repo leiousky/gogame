@@ -65,7 +65,7 @@ func main() {
 	mailbox.Add(db.NewSentryCreator(), 12)
 
 	//step.3 启动邮槽协程处理
-	mailbox.Start()
+	mailbox.Start(0)
 
 	//如果开启机器人
 	if RoomInfo.EnableRobot {

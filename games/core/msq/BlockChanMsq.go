@@ -1,10 +1,10 @@
 package msq
 
 import (
-	"errors"
 	"fmt"
 	"games/comm/utils"
 	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -20,6 +20,8 @@ const (
 /// <summary>
 type BlockChanMsq struct {
 	msq         chan interface{}
+	l           *sync.Mutex
+	closed      bool
 	signal      chan bool
 	n           int64
 	tid         uint32
@@ -29,28 +31,43 @@ type BlockChanMsq struct {
 func NewBlockChanMsq() MsgQueue {
 	return &BlockChanMsq{
 		msq:    make(chan interface{}, 100),
+		l:      &sync.Mutex{},
 		signal: make(chan bool, 1),
-		tid:    utils.GoroutineID(),
-	}
+		tid:    utils.GoroutineID()}
 }
 
-func (s *BlockChanMsq) Push(data interface{}) error {
+func (s *BlockChanMsq) Push(data interface{}) {
 	if len(s.msq) == cap(s.msq) {
-		return errors.New(fmt.Sprintf("pid[%v]BlockChanMsq is full", s.tid))
+		panic(fmt.Sprintf("pid[%v]BlockChanMsq is full", s.tid))
 	}
-	select {
-	case s.msq <- data:
-		atomic.AddInt64(&s.n, 1)
+	s.l.Lock()
+	if data == nil {
+		if !s.closed {
+			s.msq <- data
+			close(s.msq)
+			s.closed = true
+		} else {
+			panic(fmt.Sprintf("pid[%v]BlockChanMsq repeat close", s.tid))
+		}
+	} else {
+		if !s.closed {
+			select {
+			case s.msq <- data:
+				atomic.AddInt64(&s.n, 1)
+			}
+		} else {
+			panic(fmt.Sprintf("pid[%v]BlockChanMsq is closed", s.tid))
+		}
 	}
-	return nil
+	s.l.Unlock()
 }
 
 func (s *BlockChanMsq) blockPop() (data interface{}, exit bool) {
 	select {
-	case q := <-s.msq:
+	case q, ok := <-s.msq:
 		{
-			if q == nil {
-				close(s.msq)
+			if q == nil || !ok {
+				//close(s.msq)
 				close(s.signal)
 				exit = true
 				break
@@ -66,10 +83,10 @@ func (s *BlockChanMsq) blockPop() (data interface{}, exit bool) {
 
 func (s *BlockChanMsq) nonblockPop() (data interface{}, exit bool) {
 	select {
-	case q := <-s.msq:
+	case q, ok := <-s.msq:
 		{
-			if q == nil {
-				close(s.msq)
+			if q == nil || !ok {
+				//close(s.msq)
 				close(s.signal)
 				exit = true
 				break
@@ -129,12 +146,6 @@ func (s *BlockChanMsq) EnableNonBlocking(bv bool) {
 
 func (s *BlockChanMsq) signalx() {
 	s.signal <- true
-}
-
-func (s *BlockChanMsq) Close() {
-	if s.msq != nil {
-		close(s.msq)
-	}
 }
 
 var msq = NewBlockChanMsq()

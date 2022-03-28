@@ -8,8 +8,8 @@ import (
 /// Pair key-value
 /// <summary>
 type Pair struct {
-	key interface{}
-	val interface{}
+	Key interface{}
+	Val interface{}
 }
 
 /// <summary>
@@ -26,14 +26,14 @@ func NewOrderedmap() *Orderedmap {
 func (s *Orderedmap) Insert(key interface{}, value interface{}, compare func(a, b interface{}) bool) {
 	pos := s.list.Front()
 	for ; pos != nil; pos = pos.Next() {
-		if !compare(key, pos.Value.(*Pair).key) {
-			data := &Pair{key: key, val: value}
+		if !compare(key, pos.Value.(*Pair).Key) {
+			data := &Pair{Key: key, Val: value}
 			s.list.InsertBefore(data, pos)
 			break
 		}
 	}
 	if pos == nil {
-		data := &Pair{key: key, val: value}
+		data := &Pair{Key: key, Val: value}
 		s.list.PushBack(data)
 	}
 }
@@ -41,7 +41,7 @@ func (s *Orderedmap) Insert(key interface{}, value interface{}, compare func(a, 
 func (s *Orderedmap) Top() (interface{}, interface{}) {
 	if elem := s.list.Front(); elem != nil {
 		data := elem.Value.(*Pair)
-		return data.key, data.val
+		return data.Key, data.Val
 	}
 	return nil, nil
 }

@@ -35,7 +35,7 @@ func (s *BlockListMsq) EnableNonBlocking(bv bool) {
 	}
 }
 
-func (s *BlockListMsq) Push(data interface{}) error {
+func (s *BlockListMsq) Push(data interface{}) {
 	{
 		s.l.Lock()
 		s.msq.PushBack(data)
@@ -43,7 +43,6 @@ func (s *BlockListMsq) Push(data interface{}) error {
 	}
 	atomic.AddInt64(&s.n, 1)
 	s.c.Signal()
-	return nil
 }
 
 func (s *BlockListMsq) Pop() (data interface{}, exit bool) {
@@ -117,8 +116,4 @@ func (s *BlockListMsq) reset() {
 		s.msq.Remove(elem)
 	}
 	atomic.StoreInt64(&s.n, 0)
-}
-
-func (s *BlockListMsq) Close() {
-
 }

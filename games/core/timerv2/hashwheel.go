@@ -1,4 +1,4 @@
-package timer
+package timerv2
 
 import (
 	"errors"

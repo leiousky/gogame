@@ -25,14 +25,13 @@ func (s *FreeListMsq) EnableNonBlocking(bv bool) {
 
 }
 
-func (s *FreeListMsq) Push(data interface{}) error {
+func (s *FreeListMsq) Push(data interface{}) {
 	{
 		s.l.Lock()
 		s.msq.PushBack(data)
 		s.l.Unlock()
 		atomic.AddInt64(&s.n, 1)
 	}
-	return nil
 }
 
 func (s *FreeListMsq) Pop() (data interface{}, exit bool) {
@@ -88,8 +87,4 @@ func (s *FreeListMsq) reset() {
 		s.msq.Remove(elem)
 	}
 	atomic.StoreInt64(&s.n, 0)
-}
-
-func (s *FreeListMsq) Close() {
-
 }

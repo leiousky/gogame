@@ -17,7 +17,7 @@ type IMailbox interface {
 	/// 遍历每个邮槽
 	Range(cb func(ISlot, int))
 	/// 启动所有邮槽协程处理
-	Start()
+	Start(size int)
 	/// 获取下一个邮槽
 	GetNextSlot() ISlot
 	/// 等待退出
@@ -66,9 +66,9 @@ func (s *Mailbox) Range(cb func(ISlot, int)) {
 }
 
 /// 启动所有邮槽协程处理
-func (s *Mailbox) Start() {
+func (s *Mailbox) Start(size int) {
 	for _, slot := range s.slots {
-		slot.Schedule()
+		slot.Sched(size)
 	}
 	if len(s.slots) > 0 {
 		s.ch = make(chan os.Signal)

@@ -1,9 +1,9 @@
 package msq
 
 import (
-	"errors"
 	"fmt"
 	"games/comm/utils"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -12,35 +12,53 @@ import (
 /// FreeChanMsq 非阻塞chan类型
 /// <summary>
 type FreeChanMsq struct {
-	msq chan interface{}
-	n   int64
-	tid uint32
+	msq    chan interface{}
+	l      *sync.Mutex
+	closed bool
+	n      int64
+	tid    uint32
 }
 
 func NewFreeChanMsq() MsgQueue {
 	return &FreeChanMsq{
 		msq: make(chan interface{}, 9000),
+		l:   &sync.Mutex{},
 		tid: utils.GoroutineID(),
 	}
 }
 
-func (s *FreeChanMsq) Push(data interface{}) error {
+func (s *FreeChanMsq) Push(data interface{}) {
 	if len(s.msq) == cap(s.msq) {
-		return errors.New(fmt.Sprintf("pid[%v]FreeChanMsq is full", s.tid))
+		panic(fmt.Sprintf("pid[%v]FreeChanMsq is full", s.tid))
 	}
-	select {
-	case s.msq <- data:
-		atomic.AddInt64(&s.n, 1)
+	s.l.Lock()
+	if data == nil {
+		if !s.closed {
+			s.msq <- data
+			close(s.msq)
+			s.closed = true
+		} else {
+			panic(fmt.Sprintf("pid[%v]FreeChanMsq repeat close", s.tid))
+		}
+	} else {
+		if !s.closed {
+			select {
+			case s.msq <- data:
+				atomic.AddInt64(&s.n, 1)
+			}
+		} else {
+			panic(fmt.Sprintf("pid[%v]FreeChanMsq is closed", s.tid))
+		}
 	}
-	return nil
+	s.l.Unlock()
 }
 
 func (s *FreeChanMsq) Pop() (data interface{}, exit bool) {
 	select {
-	case q := <-s.msq:
+	case q, ok := <-s.msq:
 		{
-			if q == nil {
-				close(s.msq)
+			if q == nil || !ok {
+				//close(s.msq)
 				exit = true
 				break
 			} else {
@@ -74,10 +92,4 @@ func (s *FreeChanMsq) Signal() {
 }
 
 func (s *FreeChanMsq) EnableNonBlocking(bv bool) {
-}
-
-func (s *FreeChanMsq) Close() {
-	if s.msq != nil {
-		close(s.msq)
-	}
 }

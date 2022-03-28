@@ -73,7 +73,7 @@ func (s *tcpClient) connectTCP(address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	peer := gSessMgr.Add(conn)
+	peer := gSessMgr.Add(conn, SesClient)
 	if peer != nil {
 		// peer.SetOnConnected(s.onConnected)
 		// peer.SetOnClosed(s.onClosed)
@@ -106,7 +106,7 @@ func (s *tcpClient) connectWS(address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	peer := gSessMgr.Add(conn)
+	peer := gSessMgr.Add(conn, SesClient)
 	if peer != nil {
 		// peer.SetOnConnected(s.onConnected)
 		// peer.SetOnClosed(s.onClosed)
