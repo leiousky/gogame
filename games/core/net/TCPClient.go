@@ -14,7 +14,7 @@ import (
 /// <summary>
 /// TCPClient TCP/WS客户端
 /// <summary>
-type TCPClient interface {
+type ITCPClient interface {
 	//会话ID
 	ID() int64
 	//会话
@@ -27,47 +27,40 @@ type TCPClient interface {
 	ConnectTCP(address string)
 }
 
-//
-type tcpClient struct {
+type TCPClient struct {
 	ses Session
 }
 
-//
-func (s *tcpClient) ID() int64 {
+func (s *TCPClient) ID() int64 {
 	if s.ses != nil {
 		return s.ses.ID()
 	}
 	return int64(0)
 }
 
-//
-func (s *tcpClient) Session() Session {
+func (s *TCPClient) Session() Session {
 	return s.ses
 }
 
-//
-func (s *tcpClient) Close() {
+func (s *TCPClient) Close() {
 	if s.ses != nil {
 		s.ses.Close()
 	}
 }
 
-//
-func (s *tcpClient) Write(msg interface{}) {
+func (s *TCPClient) Write(msg interface{}) {
 	if s.ses != nil {
 		s.ses.Write(msg)
 	}
 }
 
-//
-func (s *tcpClient) ConnectTCP(address string) {
+func (s *TCPClient) ConnectTCP(address string) {
 	if s.connectWS(address) == -1 {
 		s.connectTCP(address)
 	}
 }
 
-//
-func (s *tcpClient) connectTCP(address string) int {
+func (s *TCPClient) connectTCP(address string) int {
 	conn, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
 		fmt.Println(err)
@@ -88,7 +81,7 @@ func (s *tcpClient) connectTCP(address string) int {
 }
 
 //
-func (s *tcpClient) connectWS(address string) int {
+func (s *TCPClient) connectWS(address string) int {
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")
 	if len(vec) != 2 {
