@@ -72,7 +72,7 @@ func main() {
 		//step.4 开启机器人入桌检查
 		mailbox.Range(func(slot core.ISlot, i int) {
 			if i < int(RoomInfo.DeskCount) {
-				timer := slot.GetProc().GetTimer().(*timer.SafeTimerScheduel)
+				timer := slot.GetProc().GetTimerv2().(*timer.SafeTimerScheduel)
 				worker := slot.GetProc().GetWorker().(*service.Sentry)
 				timer.CreatCronFunc("@every 1s", worker.OnTick)
 			}

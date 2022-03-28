@@ -22,6 +22,7 @@ type IProc interface {
 	GetPID() uint32
 	/// 内置局部定时器，线程安全
 	GetTimer() interface{}
+	GetTimerv2() interface{}
 	/// 业务句柄
 	GetWorker() IWorker
 	/// 添加任务
@@ -103,6 +104,10 @@ func (s *Proc) GetPID() uint32 {
 /// 获取线程内置局部定时器，肯定线程安全
 func (s *Proc) GetTimer() interface{} {
 	return s.timer
+}
+
+func (s *Proc) GetTimerv2() interface{} {
+	return s.timerv2
 }
 
 /// 获取业务句柄
@@ -307,7 +312,7 @@ EXIT:
 			}
 			break
 		default:
-			log.Println("execFunc...")
+			//log.Println("execFunc...")
 			//处理空闲回调
 			utils.SafeCall(
 				func() {
