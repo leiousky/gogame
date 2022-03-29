@@ -15,6 +15,22 @@ import (
 )
 
 /// <summary>
+/// Connector 客户端连接器
+/// <summary>
+type Connector interface {
+	SetOnConnected(cb cb.OnConnected)
+	SetOnMessage(cb cb.OnMessage)
+	SetOnClosed(cb cb.OnClosed)
+	SetOnWritten(cb cb.OnWritten)
+	SetOnError(cb cb.OnError)
+	Session() conn.Session
+	Write(msg interface{})
+	ConnectTCP(name, address string)
+	Reconnect(d time.Duration)
+	Disconnect()
+}
+
+/// <summary>
 /// sessions 客户端会话容器
 /// <summary>
 var sessions = conn.NewSessions()
@@ -22,7 +38,7 @@ var sessions = conn.NewSessions()
 /// <summary>
 /// Connector 客户端连接器
 /// <summary>
-type Connector struct {
+type connector struct {
 	peer        conn.Session
 	onConnected cb.OnConnected
 	onMessage   cb.OnMessage
@@ -31,42 +47,42 @@ type Connector struct {
 	onError     cb.OnError
 }
 
-func NewConnector() *Connector {
-	s := &Connector{}
+func NewConnector() Connector {
+	s := &connector{}
 	return s
 }
 
-func (s *Connector) SetOnConnected(cb cb.OnConnected) {
+func (s *connector) SetOnConnected(cb cb.OnConnected) {
 	s.onConnected = cb
 }
 
-func (s *Connector) SetOnMessage(cb cb.OnMessage) {
+func (s *connector) SetOnMessage(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *Connector) SetOnClosed(cb cb.OnClosed) {
+func (s *connector) SetOnClosed(cb cb.OnClosed) {
 	s.onClosed = cb
 }
 
-func (s *Connector) SetOnWritten(cb cb.OnWritten) {
+func (s *connector) SetOnWritten(cb cb.OnWritten) {
 	s.onWritten = cb
 }
 
-func (s *Connector) SetOnError(cb cb.OnError) {
+func (s *connector) SetOnError(cb cb.OnError) {
 	s.onError = cb
 }
 
-func (s *Connector) Session() conn.Session {
+func (s *connector) Session() conn.Session {
 	return s.peer
 }
 
-func (s *Connector) Write(msg interface{}) {
+func (s *connector) Write(msg interface{}) {
 	if s.peer != nil {
 		s.peer.Write(msg)
 	}
 }
 
-func (s *Connector) connectTCP(name, address string) int {
+func (s *connector) connectTCP(name, address string) int {
 	c, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
 		fmt.Println(err)
@@ -86,7 +102,7 @@ func (s *Connector) connectTCP(name, address string) int {
 	return 0
 }
 
-func (s *Connector) connectWS(name, address string) int {
+func (s *connector) connectWS(name, address string) int {
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")
 	if len(vec) != 2 {
@@ -118,16 +134,16 @@ func (s *Connector) connectWS(name, address string) int {
 	return 0
 }
 
-func (s *Connector) ConnectTCP(name, address string) {
+func (s *connector) ConnectTCP(name, address string) {
 	if s.connectWS(name, address) == -1 {
 		s.connectTCP(name, address)
 	}
 }
 
-func (s *Connector) Reconnect(d time.Duration) {
+func (s *connector) Reconnect(d time.Duration) {
 }
 
-func (s *Connector) Disconnect() {
+func (s *connector) Disconnect() {
 	if s.peer != nil {
 		s.peer.Close()
 	}

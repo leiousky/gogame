@@ -7,7 +7,7 @@ import (
 
 type TCPClient struct {
 	tcp.TCPClient
-	c *tcp.Connector
+	c tcp.Connector
 }
 
 func NewTCPClient() tcp.TCPClient {
