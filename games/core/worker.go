@@ -16,6 +16,9 @@ type IWorker interface {
 	OnTimer(timerID uint32, dt int32, args interface{}) bool
 }
 
+/// <summary>
+/// IWorkerCreator 业务工厂
+/// <summary>
 type IWorkerCreator interface {
 	Create(c IProc) IWorker
 }

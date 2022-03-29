@@ -1,9 +1,11 @@
-package net
+package tcp
 
 import (
 	"games/comm/utils"
+	"games/core/cb"
+	"games/core/conn"
+	"games/core/conn/transmit"
 	"games/core/msq"
-	"games/core/net/transmit"
 
 	"log"
 	"net"
@@ -21,20 +23,20 @@ type TCPConnection struct {
 	name          string
 	conn          interface{}
 	context       map[int]interface{}
-	connType      SesType
+	connType      conn.ConnType
 	msq           msq.MsgQueue
 	channel       transmit.IChannel
 	Wg            sync.WaitGroup
 	closing       int64
-	onConnected   OnConnected
-	onMessage     OnMessage
-	onClosed      OnClosed
-	onWritten     OnWritten
-	onError       OnError
-	closeCallback CloseCallback
+	onConnected   cb.OnConnected
+	onMessage     cb.OnMessage
+	onClosed      cb.OnClosed
+	onWritten     cb.OnWritten
+	onError       cb.OnError
+	closeCallback cb.CloseCallback
 }
 
-func NewTCPConnection(id int64, name string, conn interface{}, connType SesType, channel transmit.IChannel) Session {
+func NewTCPConnection(id int64, name string, conn interface{}, connType conn.ConnType, channel transmit.IChannel) conn.Session {
 	peer := &TCPConnection{
 		id:       id,
 		name:     name,
@@ -47,7 +49,7 @@ func NewTCPConnection(id int64, name string, conn interface{}, connType SesType,
 }
 
 func (s *TCPConnection) ID() int64 {
-	return s.connID
+	return s.id
 }
 
 func (s *TCPConnection) Name() string {
@@ -70,7 +72,7 @@ func (s *TCPConnection) Conn() interface{} {
 	return s.conn
 }
 
-func (s *TCPConnection) Type() SesType {
+func (s *TCPConnection) Type() conn.ConnType {
 	return s.connType
 }
 
@@ -93,27 +95,27 @@ func (s *TCPConnection) GetContext(key int) interface{} {
 	return nil
 }
 
-func (s *TCPConnection) SetOnConnected(cb OnConnected) {
+func (s *TCPConnection) SetOnConnected(cb cb.OnConnected) {
 	s.onConnected = cb
 }
 
-func (s *TCPConnection) SetOnClosed(cb OnClosed) {
+func (s *TCPConnection) SetOnClosed(cb cb.OnClosed) {
 	s.onClosed = cb
 }
 
-func (s *TCPConnection) SetOnMessage(cb OnMessage) {
+func (s *TCPConnection) SetOnMessage(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *TCPConnection) SetOnError(cb OnError) {
+func (s *TCPConnection) SetOnError(cb cb.OnError) {
 	s.onError = cb
 }
 
-func (s *TCPConnection) SetOnWritten(cb OnWritten) {
+func (s *TCPConnection) SetOnWritten(cb cb.OnWritten) {
 	s.onWritten = cb
 }
 
-func (s *TCPConnection) SetCloseCallback(cb CloseCallback) {
+func (s *TCPConnection) SetCloseCallback(cb cb.CloseCallback) {
 	s.closeCallback = cb
 }
 

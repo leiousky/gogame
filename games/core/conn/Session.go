@@ -1,6 +1,9 @@
-package net
+package conn
 
-import "games/core/net/transmit"
+import (
+	"games/core/cb"
+	"games/core/conn/transmit"
+)
 
 const (
 	ReasonPeerClosed int32 = iota + 1001 //对端关闭
@@ -13,18 +16,18 @@ const (
 	KDisconnected                     //连接关闭
 )
 
-type SesType uint8
+type ConnType uint8
 
 const (
-	SesClient SesType = SesType(0)
-	SesServer SesType = SesType(1)
+	ClientType ConnType = ConnType(0)
+	ServerType ConnType = ConnType(1)
 )
 
 type Session interface {
 	ID() int64
 	Name() string
 	IsWebsocket() bool
-	Type() SesType
+	Type() ConnType
 	Conn() interface{}
 	SetChannel(channel transmit.IChannel)
 	SetContext(key int, val interface{})
@@ -32,10 +35,10 @@ type Session interface {
 	Close()
 	Write(msg interface{})
 
-	SetOnConnected(cb OnConnected)
-	SetOnMessage(cb OnMessage)
-	SetOnClosed(cb OnClosed)
-	SetOnError(cb OnError)
-	SetOnWritten(cb OnWritten)
-	SetCloseCallback(cb CloseCallback)
+	SetOnConnected(cb cb.OnConnected)
+	SetOnMessage(cb cb.OnMessage)
+	SetOnClosed(cb cb.OnClosed)
+	SetOnError(cb cb.OnError)
+	SetOnWritten(cb cb.OnWritten)
+	SetCloseCallback(cb cb.CloseCallback)
 }
