@@ -2,9 +2,8 @@ package net
 
 import "sync/atomic"
 
-var gSessionID int64
+var gConnID int64
 
-//
-func createSessionID() int64 {
-	return atomic.AddInt64(&gSessionID, 1)
+func NewConnID() int64 {
+	return atomic.AddInt64(&gConnID, 1)
 }

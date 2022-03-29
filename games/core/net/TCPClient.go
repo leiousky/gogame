@@ -2,6 +2,7 @@ package net
 
 import (
 	"fmt"
+	"games/core/net/transmit"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,76 +13,68 @@ import (
 )
 
 /// <summary>
-/// TCPClient TCP/WS客户端
+/// ITCPClient TCP/WS
 /// <summary>
 type ITCPClient interface {
-	//会话ID
-	ID() int64
-	//会话
 	Session() Session
-	//关闭
-	Close()
-	//写
 	Write(msg interface{})
-	//连接
-	ConnectTCP(address string)
+	ConnectTCP(name, address string)
+	OnConnected(peer Session)
+	OnMessage(msg interface{}, peer Session)
+	OnClosed(peer Session)
+	Reconnect(d time.Duration)
+	Disconnect()
 }
 
+/// <summary>
+/// Clients TCP/WS
+/// <summary>
+var Clients = NewSessions()
+
+/// <summary>
+/// TCPClient TCP/WS
+/// <summary>
 type TCPClient struct {
-	ses Session
+	peer Session
 }
 
-func (s *TCPClient) ID() int64 {
-	if s.ses != nil {
-		return s.ses.ID()
-	}
-	return int64(0)
+func NewTCPClient() ITCPClient {
+	s := &TCPClient{}
+	return s
 }
 
 func (s *TCPClient) Session() Session {
-	return s.ses
-}
-
-func (s *TCPClient) Close() {
-	if s.ses != nil {
-		s.ses.Close()
-	}
+	return s.peer
 }
 
 func (s *TCPClient) Write(msg interface{}) {
-	if s.ses != nil {
-		s.ses.Write(msg)
+	if s.peer != nil {
+		s.peer.Write(msg)
 	}
 }
 
-func (s *TCPClient) ConnectTCP(address string) {
-	if s.connectWS(address) == -1 {
-		s.connectTCP(address)
-	}
-}
-
-func (s *TCPClient) connectTCP(address string) int {
+func (s *TCPClient) connectTCP(name, address string) int {
 	conn, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
-	peer := gSessMgr.Add(conn, SesClient)
-	if peer != nil {
-		// peer.SetOnConnected(s.onConnected)
-		// peer.SetOnClosed(s.onClosed)
-		// peer.SetOnMessage(s.onMessage)
-		// peer.SetOnError(s.onError)
-		// peer.SetCloseCallback(s.remove)
-		// peer.OnEstablished()
-	} else {
-		conn.Close()
+	//c, ok := conn.(net.Conn); ok
+	s.peer = NewTCPConnection(
+		NewConnID(), name, conn,
+		SesClient, transmit.NewTCPChannel())
+	s.peer.SetOnConnected(s.OnConnected)
+	s.peer.SetOnMessage(s.OnMessage)
+	s.peer.SetOnClosed(s.OnClosed)
+	s.peer.SetOnWritten(s.OnWritten)
+	s.peer.SetOnError(s.OnError)
+	if !Clients.Add(s.peer) {
+		s.peer.Close()
 	}
 	return 0
 }
 
-//
-func (s *TCPClient) connectWS(address string) int {
+func (s *TCPClient) connectWS(name, address string) int {
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")
 	if len(vec) != 2 {
@@ -99,17 +92,47 @@ func (s *TCPClient) connectWS(address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	peer := gSessMgr.Add(conn, SesClient)
-	if peer != nil {
-		// peer.SetOnConnected(s.onConnected)
-		// peer.SetOnClosed(s.onClosed)
-		// peer.SetOnMessage(s.onMessage)
-		// peer.SetOnError(s.onError)
-		// peer.SetOnWritten(s.onWritten)
-		// peer.SetCloseCallback(s.remove)
-		// peer.OnEstablished()
-	} else {
-		conn.Close()
+	//c, ok := conn.(*websocket.Conn); ok
+	s.peer = NewTCPConnection(
+		NewConnID(), name, conn,
+		SesClient, transmit.NewWSChannel())
+	s.peer.SetOnConnected(s.OnConnected)
+	s.peer.SetOnMessage(s.OnMessage)
+	s.peer.SetOnClosed(s.OnClosed)
+	s.peer.SetOnWritten(s.OnWritten)
+	s.peer.SetOnError(s.OnError)
+	if !Clients.Add(s.peer) {
+		s.peer.Close()
 	}
 	return 0
+}
+
+func (s *TCPClient) ConnectTCP(name, address string) {
+	if s.connectWS(name, address) == -1 {
+		s.connectTCP(name, address)
+	}
+}
+
+func (s *TCPClient) OnConnected(peer Session) {
+}
+
+func (s *TCPClient) OnClosed(peer Session) {
+}
+
+func (s *TCPClient) OnMessage(msg interface{}, peer Session) {
+}
+
+func (s *TCPClient) OnWritten(msg interface{}, peer Session) {
+}
+
+func (s *TCPClient) OnError(peer Session, err error) {
+}
+
+func (s *TCPClient) Reconnect(d time.Duration) {
+}
+
+func (s *TCPClient) Disconnect() {
+	if s.peer != nil {
+		s.peer.Close()
+	}
 }

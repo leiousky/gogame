@@ -33,8 +33,8 @@ type Session interface {
 	Write(msg interface{})
 
 	SetOnConnected(cb OnConnected)
-	SetOnClosed(cb OnClosed)
 	SetOnMessage(cb OnMessage)
+	SetOnClosed(cb OnClosed)
 	SetOnError(cb OnError)
 	SetOnWritten(cb OnWritten)
 	SetCloseCallback(cb CloseCallback)

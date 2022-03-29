@@ -17,8 +17,8 @@ import (
 /// TCPConnection TCP/WS连接会话
 /// <summary>
 type TCPConnection struct {
+	id            int64
 	name          string
-	connID        int64
 	conn          interface{}
 	context       map[int]interface{}
 	connType      SesType
@@ -27,17 +27,17 @@ type TCPConnection struct {
 	Wg            sync.WaitGroup
 	closing       int64
 	onConnected   OnConnected
-	onClosed      OnClosed
 	onMessage     OnMessage
+	onClosed      OnClosed
 	onWritten     OnWritten
 	onError       OnError
 	closeCallback CloseCallback
 }
 
-func newTCPConnection(name string, conn interface{}, connType SesType, channel transmit.IChannel) Session {
+func NewTCPConnection(id int64, name string, conn interface{}, connType SesType, channel transmit.IChannel) Session {
 	peer := &TCPConnection{
+		id:       id,
 		name:     name,
-		connID:   createSessionID(),
 		conn:     conn,
 		connType: connType,
 		context:  map[int]interface{}{},
@@ -180,12 +180,10 @@ func (s *TCPConnection) writeLoop() {
 	s.Wg.Done()
 }
 
-/// 写
 func (s *TCPConnection) Write(msg interface{}) {
 	s.msq.Push(msg)
 }
 
-/// 关闭
 func (s *TCPConnection) Close() {
 	//本端关闭连接
 	if 0 == atomic.SwapInt64(&s.closing, 1) && s.conn != nil {
@@ -194,14 +192,13 @@ func (s *TCPConnection) Close() {
 	}
 }
 
-/// 关闭连接对象
 func (s *TCPConnection) close() {
 	if s.conn == nil {
 		return
 	}
-	if _, ok := s.conn.(net.Conn); ok {
-		s.conn.(net.Conn).Close()
-	} else if _, ok := s.conn.(*websocket.Conn); ok {
-		s.conn.(*websocket.Conn).Close()
+	if c, ok := s.conn.(net.Conn); ok {
+		c.Close()
+	} else if c, ok := s.conn.(*websocket.Conn); ok {
+		c.Close()
 	}
 }
