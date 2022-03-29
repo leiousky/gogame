@@ -17,15 +17,15 @@ import (
 /// TCPConnection TCP/WS连接会话
 /// <summary>
 type TCPConnection struct {
+	name          string
 	connID        int64
 	conn          interface{}
 	context       map[int]interface{}
 	connType      SesType
-	closing       int64
+	msq           msq.MsgQueue
+	channel       transmit.IChannel
 	Wg            sync.WaitGroup
-	wsq           msq.MsgQueue      //写消息队列
-	rsq           msq.MsgQueue      //读消息队列
-	Channel       transmit.IChannel //消息传输协议
+	closing       int64
 	onConnected   OnConnected
 	onClosed      OnClosed
 	onMessage     OnMessage
@@ -34,19 +34,24 @@ type TCPConnection struct {
 	closeCallback CloseCallback
 }
 
-func newTCPConnection(conn interface{}, connType SesType, channel transmit.IChannel) Session {
+func newTCPConnection(name string, conn interface{}, connType SesType, channel transmit.IChannel) Session {
 	peer := &TCPConnection{
+		name:     name,
 		connID:   createSessionID(),
 		conn:     conn,
 		connType: connType,
 		context:  map[int]interface{}{},
-		wsq:      msq.NewBlockVecMsq(),
-		Channel:  channel}
+		msq:      msq.NewBlockVecMsq(),
+		channel:  channel}
 	return peer
 }
 
 func (s *TCPConnection) ID() int64 {
 	return s.connID
+}
+
+func (s *TCPConnection) Name() string {
+	return s.name
 }
 
 func (s *TCPConnection) IsWebsocket() bool {
@@ -67,6 +72,10 @@ func (s *TCPConnection) Conn() interface{} {
 
 func (s *TCPConnection) Type() SesType {
 	return s.connType
+}
+
+func (s *TCPConnection) SetChannel(channel transmit.IChannel) {
+	s.channel = channel
 }
 
 func (s *TCPConnection) SetContext(key int, val interface{}) {
@@ -112,7 +121,7 @@ func (s *TCPConnection) SetCloseCallback(cb CloseCallback) {
 func (s *TCPConnection) readLoop() {
 	utils.CheckPanic()
 	for {
-		msg, err := s.Channel.OnRecvMessage(s.conn)
+		msg, err := s.channel.OnRecvMessage(s.conn)
 		if err != nil {
 			//log.Println("readLoop: ", err)
 			// if !IsEOFOrReadError(err) {
@@ -132,7 +141,7 @@ func (s *TCPConnection) readLoop() {
 	//对端关闭连接
 	if 0 == atomic.LoadInt64(&s.closing) {
 		//通知写退出
-		s.wsq.Push(nil)
+		s.msq.Push(nil)
 	}
 	//等待写退出
 	s.Wg.Wait()
@@ -146,9 +155,9 @@ func (s *TCPConnection) readLoop() {
 func (s *TCPConnection) writeLoop() {
 	utils.CheckPanic()
 	for {
-		msgs, exit := s.wsq.Pick()
+		msgs, exit := s.msq.Pick()
 		for _, msg := range msgs {
-			err := s.Channel.OnSendMessage(s.conn, msg)
+			err := s.channel.OnSendMessage(s.conn, msg)
 			if err != nil {
 				log.Println("writeLoop: ", err)
 				if !transmit.IsEOFOrWriteError(err) {
@@ -173,7 +182,7 @@ func (s *TCPConnection) writeLoop() {
 
 /// 写
 func (s *TCPConnection) Write(msg interface{}) {
-	s.wsq.Push(msg)
+	s.msq.Push(msg)
 }
 
 /// 关闭
@@ -181,7 +190,7 @@ func (s *TCPConnection) Close() {
 	//本端关闭连接
 	if 0 == atomic.SwapInt64(&s.closing, 1) && s.conn != nil {
 		//通知写退出
-		s.wsq.Push(nil)
+		s.msq.Push(nil)
 	}
 }
 

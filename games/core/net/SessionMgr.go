@@ -9,10 +9,10 @@ import (
 )
 
 type SessionMgr interface {
-	Add(conn interface{}, connType SesType) Session
+	Add(name string, conn interface{}, connType SesType) Session
 	Remove(peer Session)
 	Get(sesID int64) Session
-	Count() int64
+	Count() int
 	Stop()
 	Wait()
 }
@@ -34,16 +34,16 @@ func newSessionMgr() SessionMgr {
 
 }
 
-func (s *defaultSessionMgr) Add(conn interface{}, connType SesType) Session {
+func (s *defaultSessionMgr) Add(name string, conn interface{}, connType SesType) Session {
 	if !s.exit {
 		if c, ok := conn.(net.Conn); ok {
-			peer := newTCPConnection(c, connType, transmit.NewTCPChannel())
+			peer := newTCPConnection(name, c, connType, transmit.NewTCPChannel())
 			s.l.Lock()
 			s.peers[peer.ID()] = peer
 			s.l.Unlock()
 			return peer
 		} else if c, ok := conn.(*websocket.Conn); ok {
-			peer := newTCPConnection(c, connType, transmit.NewWSChannel())
+			peer := newTCPConnection(name, c, connType, transmit.NewWSChannel())
 			s.l.Lock()
 			s.peers[peer.ID()] = peer
 			s.l.Unlock()
@@ -74,8 +74,12 @@ func (s *defaultSessionMgr) Get(sesID int64) Session {
 	return nil
 }
 
-func (s *defaultSessionMgr) Count() int64 {
-	return 0
+func (s *defaultSessionMgr) Count() int {
+	c := 0
+	s.l.Lock()
+	c = len(s.peers)
+	s.l.Unlock()
+	return c
 }
 
 func (s *defaultSessionMgr) Stop() {
