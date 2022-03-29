@@ -3,8 +3,9 @@ package core
 import (
 	"fmt"
 	"games/comm/utils"
+	"games/core/cb"
+	"games/core/conn"
 	"games/core/msq"
-	"games/core/net"
 	"games/core/timer"
 	timerv2 "games/core/timerv2"
 	"log"
@@ -27,10 +28,10 @@ type IProc interface {
 	GetWorker() IWorker
 	/// 添加任务
 	AddTask(data *Event)
-	AddReadTask(cmd uint32, msg interface{}, peer net.Session)
-	AddReadTaskWith(handler net.ReadCallback, cmd uint32, msg interface{}, peer net.Session)
-	AddCustomTask(cmd uint32, msg interface{}, peer net.Session)
-	AddCustomTaskWith(handler net.CustomCallback, cmd uint32, msg interface{}, peer net.Session)
+	AddReadTask(cmd uint32, msg interface{}, peer conn.Session)
+	AddReadTaskWith(handler cb.ReadCallback, cmd uint32, msg interface{}, peer conn.Session)
+	AddCustomTask(cmd uint32, msg interface{}, peer conn.Session)
+	AddCustomTaskWith(handler cb.CustomCallback, cmd uint32, msg interface{}, peer conn.Session)
 	/// 定时器任务
 	RunAfter(delay int32, args interface{}) uint32
 	RunAfterWith(delay int32, handler timer.TimerCallback, args interface{}) uint32
@@ -163,19 +164,19 @@ func (s *Proc) push(data interface{}) {
 	s.l.Unlock()
 }
 
-func (s *Proc) AddReadTask(cmd uint32, msg interface{}, peer net.Session) {
+func (s *Proc) AddReadTask(cmd uint32, msg interface{}, peer conn.Session) {
 	s.AddTask(createEvent(EVTRead, createReadEvent(cmd, msg, peer), nil))
 }
 
-func (s *Proc) AddReadTaskWith(handler net.ReadCallback, cmd uint32, msg interface{}, peer net.Session) {
+func (s *Proc) AddReadTaskWith(handler cb.ReadCallback, cmd uint32, msg interface{}, peer conn.Session) {
 	s.AddTask(createEvent(EVTRead, createReadEventWith(handler, cmd, msg, peer), nil))
 }
 
-func (s *Proc) AddCustomTask(cmd uint32, msg interface{}, peer net.Session) {
+func (s *Proc) AddCustomTask(cmd uint32, msg interface{}, peer conn.Session) {
 	s.AddTask(createEvent(EVTCustom, createCustomEvent(cmd, msg, peer), nil))
 }
 
-func (s *Proc) AddCustomTaskWith(handler net.CustomCallback, cmd uint32, msg interface{}, peer net.Session) {
+func (s *Proc) AddCustomTaskWith(handler cb.CustomCallback, cmd uint32, msg interface{}, peer conn.Session) {
 	s.AddTask(createEvent(EVTCustom, createCustomEventWith(handler, cmd, msg, peer), nil))
 }
 

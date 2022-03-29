@@ -2,7 +2,7 @@ package db
 
 import (
 	"games/core"
-	"games/core/net"
+	"games/core/conn"
 )
 
 type Sentry struct {
@@ -24,19 +24,19 @@ func (s *Sentry) OnTick() {
 	s.main.OnTick()
 }
 
-func (s *Sentry) OnConnected(peer net.Session, Type net.SesType) {
+func (s *Sentry) OnConnected(peer conn.Session, Type conn.ConnType) {
 
 }
 
-func (s *Sentry) OnClosed(peer net.Session, Type net.SesType) {
+func (s *Sentry) OnClosed(peer conn.Session, Type conn.ConnType) {
 
 }
 
-func (s *Sentry) OnRead(cmd uint32, msg interface{}, session net.Session) {
+func (s *Sentry) OnRead(cmd uint32, msg interface{}, session conn.Session) {
 	s.main.OnRead(cmd, msg, session)
 }
 
-func (s *Sentry) OnCustom(cmd uint32, msg interface{}, session net.Session) {
+func (s *Sentry) OnCustom(cmd uint32, msg interface{}, session conn.Session) {
 	s.main.OnCustom(cmd, msg, session)
 }
 

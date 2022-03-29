@@ -3,18 +3,19 @@ package service
 import (
 	"fmt"
 	"games/comm/utils"
-	"games/core/net"
+	"games/core/cb"
+	"games/core/conn"
 )
 
 type sMain struct {
 	entry    *Sentry
-	handlers net.CmdCallbacks
+	handlers cb.CmdCallbacks
 	tick     uint32
 }
 
 func newMain(s *Sentry) *sMain {
 	return &sMain{entry: s,
-		handlers: net.CmdCallbacks{}}
+		handlers: cb.CmdCallbacks{}}
 }
 
 func (s *sMain) initModules(args ...interface{}) {
@@ -32,7 +33,7 @@ func (s *sMain) OnTick() {
 	fmt.Println("sMain::OnTick 机器人入桌检查...")
 }
 
-func (s *sMain) OnRead(cmd uint32, msg interface{}, peer net.Session) {
+func (s *sMain) OnRead(cmd uint32, msg interface{}, peer conn.Session) {
 	utils.SafeCall(func() {
 		if handler, ok := s.handlers[cmd]; ok {
 			handler(msg, peer)
@@ -41,6 +42,6 @@ func (s *sMain) OnRead(cmd uint32, msg interface{}, peer net.Session) {
 	})
 }
 
-func (s *sMain) OnCustom(cmd uint32, msg interface{}, peer net.Session) {
+func (s *sMain) OnCustom(cmd uint32, msg interface{}, peer conn.Session) {
 
 }

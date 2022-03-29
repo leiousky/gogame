@@ -1,7 +1,7 @@
 package core
 
 import (
-	"games/core/net"
+	"games/core/conn"
 )
 
 /// <summary>
@@ -9,10 +9,10 @@ import (
 /// <summary>
 type IWorker interface {
 	OnInit(args ...interface{})
-	OnConnected(peer net.Session, Type net.SesType)
-	OnClosed(peer net.Session, Type net.SesType)
-	OnRead(cmd uint32, msg interface{}, peer net.Session)
-	OnCustom(cmd uint32, msg interface{}, peer net.Session)
+	OnConnected(peer conn.Session, Type conn.ConnType)
+	OnClosed(peer conn.Session, Type conn.ConnType)
+	OnRead(cmd uint32, msg interface{}, peer conn.Session)
+	OnCustom(cmd uint32, msg interface{}, peer conn.Session)
 	OnTimer(timerID uint32, dt int32, args interface{}) bool
 }
 

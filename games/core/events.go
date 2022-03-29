@@ -1,6 +1,9 @@
 package core
 
-import "games/core/net"
+import (
+	"games/core/cb"
+	"games/core/conn"
+)
 
 const (
 	EVTConnected int8 = iota + 10 // 连接
@@ -30,17 +33,17 @@ func createEvent(ev int8, obj interface{}, ext interface{}) *Event {
 /// <summary>
 type readEvent struct {
 	cmd     uint32
-	peer    net.Session
+	peer    conn.Session
 	msg     interface{}
-	handler net.ReadCallback
+	handler cb.ReadCallback
 }
 
-func createReadEvent(cmd uint32, msg interface{}, peer net.Session) *readEvent {
+func createReadEvent(cmd uint32, msg interface{}, peer conn.Session) *readEvent {
 	ev := &readEvent{cmd: cmd, msg: msg, peer: peer}
 	return ev
 }
 
-func createReadEventWith(handler net.ReadCallback, cmd uint32, msg interface{}, peer net.Session) *readEvent {
+func createReadEventWith(handler cb.ReadCallback, cmd uint32, msg interface{}, peer conn.Session) *readEvent {
 	ev := &readEvent{handler: handler, cmd: cmd, msg: msg, peer: peer}
 	return ev
 }
@@ -50,17 +53,17 @@ func createReadEventWith(handler net.ReadCallback, cmd uint32, msg interface{}, 
 /// <summary>
 type customEvent struct {
 	cmd     uint32
-	peer    net.Session
+	peer    conn.Session
 	msg     interface{}
-	handler net.CustomCallback
+	handler cb.CustomCallback
 }
 
-func createCustomEvent(cmd uint32, msg interface{}, peer net.Session) *customEvent {
+func createCustomEvent(cmd uint32, msg interface{}, peer conn.Session) *customEvent {
 	ev := &customEvent{cmd: cmd, msg: msg, peer: peer}
 	return ev
 }
 
-func createCustomEventWith(handler net.CustomCallback, cmd uint32, msg interface{}, peer net.Session) *customEvent {
+func createCustomEventWith(handler cb.CustomCallback, cmd uint32, msg interface{}, peer conn.Session) *customEvent {
 	ev := &customEvent{handler: handler, cmd: cmd, msg: msg, peer: peer}
 	return ev
 }
