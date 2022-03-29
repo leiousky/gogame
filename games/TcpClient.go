@@ -6,6 +6,9 @@ import (
 	"log"
 )
 
+/// <summary>
+/// TCPClient TCP客户端
+/// <summary>
 type TCPClient struct {
 	tcp.TCPClient
 	c tcp.Connector
