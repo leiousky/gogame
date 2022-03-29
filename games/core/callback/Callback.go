@@ -1,18 +1,19 @@
 package cb
 
-import "games/core/conn"
+import (
+	"games/comm/utils"
+	"games/core/conn"
+)
+
+type OnConnection func(peer conn.Session)
+
+type OnMessage func(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
+
+type OnWriteComplete func(peer conn.Session)
 
 type CloseCallback func(peer conn.Session)
 
-type OnConnected func(peer conn.Session)
-
-type OnClosed func(peer conn.Session)
-
-type OnMessage func(msg interface{}, peer conn.Session)
-
-type OnWritten func(msg interface{}, peer conn.Session)
-
-type OnError func(peer conn.Session, err error)
+type ErrorCallback func(err error)
 
 type ReadCallback func(cmd uint32, msg interface{}, peer conn.Session)
 

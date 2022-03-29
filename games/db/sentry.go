@@ -24,11 +24,11 @@ func (s *Sentry) OnTick() {
 	s.main.OnTick()
 }
 
-func (s *Sentry) OnConnected(peer conn.Session, Type conn.ConnType) {
+func (s *Sentry) OnConnected(peer conn.Session, Type conn.Type) {
 
 }
 
-func (s *Sentry) OnClosed(peer conn.Session, Type conn.ConnType) {
+func (s *Sentry) OnClosed(peer conn.Session, Type conn.Type) {
 
 }
 

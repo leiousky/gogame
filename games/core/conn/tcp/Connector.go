@@ -5,6 +5,7 @@ import (
 	"games/core/cb"
 	"games/core/conn"
 	"games/core/conn/transmit"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -23,11 +24,9 @@ type Connector interface {
 	ConnectTCP(name, address string)
 	Reconnect(d time.Duration)
 	Disconnect()
-	SetOnConnected(cb cb.OnConnected)
-	SetOnMessage(cb cb.OnMessage)
-	SetOnClosed(cb cb.OnClosed)
-	SetOnWritten(cb cb.OnWritten)
-	SetOnError(cb cb.OnError)
+	SetConnectionCallback(cb cb.OnConnection)
+	SetMessageCallback(cb cb.OnMessage)
+	SetWriteCompleteCallback(cb cb.OnWriteComplete)
 }
 
 /// <summary>
@@ -39,12 +38,12 @@ var sessions = conn.NewSessions()
 /// Connector TCP连接器
 /// <summary>
 type connector struct {
-	peer        conn.Session
-	onConnected cb.OnConnected
-	onMessage   cb.OnMessage
-	onClosed    cb.OnClosed
-	onWritten   cb.OnWritten
-	onError     cb.OnError
+	peer            conn.Session
+	onConnection    cb.OnConnection
+	onMessage       cb.OnMessage
+	onWriteComplete cb.OnWriteComplete
+	closeCallback   cb.CloseCallback
+	errorCallback   cb.ErrorCallback
 }
 
 func NewConnector() Connector {
@@ -52,24 +51,24 @@ func NewConnector() Connector {
 	return s
 }
 
-func (s *connector) SetOnConnected(cb cb.OnConnected) {
-	s.onConnected = cb
+func (s *connector) SetConnectionCallback(cb cb.OnConnection) {
+	s.onConnection = cb
 }
 
-func (s *connector) SetOnMessage(cb cb.OnMessage) {
+func (s *connector) SetMessageCallback(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *connector) SetOnClosed(cb cb.OnClosed) {
-	s.onClosed = cb
+func (s *connector) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
+	s.onWriteComplete = cb
 }
 
-func (s *connector) SetOnWritten(cb cb.OnWritten) {
-	s.onWritten = cb
+func (s *connector) SetCloseCallback(cb cb.CloseCallback) {
+	s.closeCallback = cb
 }
 
-func (s *connector) SetOnError(cb cb.OnError) {
-	s.onError = cb
+func (s *connector) SetErrorCallback(cb cb.ErrorCallback) {
+	s.errorCallback = cb
 }
 
 func (s *connector) Session() conn.Session {
@@ -90,14 +89,16 @@ func (s *connector) connectTCP(name, address string) int {
 	}
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
-		conn.ClientType, transmit.NewTCPChannel())
-	s.peer.(*TCPConnection).SetOnConnected(s.onConnected)
-	s.peer.(*TCPConnection).SetOnMessage(s.onMessage)
-	s.peer.(*TCPConnection).SetOnClosed(s.onClosed)
-	s.peer.(*TCPConnection).SetOnWritten(s.onWritten)
-	s.peer.(*TCPConnection).SetOnError(s.onError)
+		conn.KClient, transmit.NewTCPChannel())
+	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
+	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
+	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
+	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
+	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
+	} else {
+		s.peer.(*TCPConnection).ConnectEstablished()
 	}
 	return 0
 }
@@ -120,16 +121,19 @@ func (s *connector) connectWS(name, address string) int {
 		fmt.Println(err)
 		return 1
 	}
+	//newConnection
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
-		conn.ClientType, transmit.NewWSChannel())
-	s.peer.(*TCPConnection).SetOnConnected(s.onConnected)
-	s.peer.(*TCPConnection).SetOnMessage(s.onMessage)
-	s.peer.(*TCPConnection).SetOnClosed(s.onClosed)
-	s.peer.(*TCPConnection).SetOnWritten(s.onWritten)
-	s.peer.(*TCPConnection).SetOnError(s.onError)
+		conn.KClient, transmit.NewWSChannel())
+	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
+	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
+	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
+	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
+	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
+	} else {
+		s.peer.(*TCPConnection).ConnectEstablished()
 	}
 	return 0
 }
@@ -138,6 +142,15 @@ func (s *connector) ConnectTCP(name, address string) {
 	if s.connectWS(name, address) == -1 {
 		s.connectTCP(name, address)
 	}
+}
+
+func (s *connector) removeConnection(peer conn.Session) {
+	sessions.Remove(peer)
+	peer.(*TCPConnection).ConnectDestroyed()
+}
+
+func (s *connector) onConnectionError(err error) {
+	log.Print("--- *** connector - connector:: onConnectionError \n")
 }
 
 func (s *connector) Reconnect(d time.Duration) {

@@ -9,8 +9,8 @@ import (
 /// <summary>
 type IWorker interface {
 	OnInit(args ...interface{})
-	OnConnected(peer conn.Session, Type conn.ConnType)
-	OnClosed(peer conn.Session, Type conn.ConnType)
+	OnConnected(peer conn.Session, Type conn.Type)
+	OnClosed(peer conn.Session, Type conn.Type)
 	OnRead(cmd uint32, msg interface{}, peer conn.Session)
 	OnCustom(cmd uint32, msg interface{}, peer conn.Session)
 	OnTimer(timerID uint32, dt int32, args interface{}) bool

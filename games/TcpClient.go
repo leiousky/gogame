@@ -1,6 +1,7 @@
 package main
 
 import (
+	"games/comm/utils"
 	"games/core/conn"
 	"games/core/conn/tcp"
 	"log"
@@ -17,11 +18,9 @@ type TCPClient struct {
 func NewTCPClient() tcp.TCPClient {
 	s := &TCPClient{
 		c: tcp.NewConnector()}
-	s.c.SetOnConnected(s.OnConnected)
-	s.c.SetOnMessage(s.OnMessage)
-	s.c.SetOnClosed(s.OnClosed)
-	s.c.SetOnWritten(s.OnWritten)
-	s.c.SetOnError(s.OnError)
+	s.c.SetConnectionCallback(s.OnConnection)
+	s.c.SetMessageCallback(s.OnMessage)
+	s.c.SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
 }
 
@@ -29,22 +28,18 @@ func (s *TCPClient) ConnectTCP(name string, address string) {
 	s.c.ConnectTCP(name, address)
 }
 
-func (s *TCPClient) OnConnected(peer conn.Session) {
-	log.Print("--- *** TCPClient - TCPClient:: OnConnected \n")
+func (s *TCPClient) OnConnection(peer conn.Session) {
+	if peer.Connected() {
+		log.Print("--- *** TCPClient - TCPClient:: OnConnected \n")
+	} else {
+		log.Print("--- *** TCPClient - TCPClient:: OnClosed \n")
+	}
 }
 
-func (s *TCPClient) OnMessage(msg interface{}, peer conn.Session) {
+func (s *TCPClient) OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp) {
 	log.Print("--- *** TCPClient - TCPClient:: OnMessage \n")
 }
 
-func (s *TCPClient) OnClosed(peer conn.Session) {
-	log.Print("--- *** TCPClient - TCPClient:: OnClosed \n")
-}
-
-func (s *TCPClient) OnWritten(msg interface{}, peer conn.Session) {
-	log.Print("--- *** TCPClient - TCPClient:: OnWritten \n")
-}
-
-func (s *TCPClient) OnError(peer conn.Session, err error) {
-	log.Print("--- *** TCPClient - TCPClient:: OnError \n")
+func (s *TCPClient) OnWriteComplete(peer conn.Session) {
+	log.Print("--- *** TCPClient - TCPClient:: OnWriteComplete \n")
 }

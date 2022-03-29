@@ -4,22 +4,26 @@ import (
 	"games/core/conn/transmit"
 )
 
+type Reason uint8
+
 const (
-	ReasonPeerClosed int32 = iota + 1001 //对端关闭
-	ReasonSelfClosed                     //本端关闭
-	ReasonSelfExcept                     //本端异常
+	KPeerClosed Reason = Reason(0) //对端关闭
+	KSelfClosed Reason = Reason(1) //本端关闭
+	KSelfExcept Reason = Reason(2) //本端异常
 )
 
+type State uint8
+
 const (
-	KConnected    int32 = iota + 1001 //已经连接
-	KDisconnected                     //连接关闭
+	KDisconnected State = State(0)
+	KConnected    State = State(1)
 )
 
-type ConnType uint8
+type Type uint8
 
 const (
-	ClientType ConnType = ConnType(0)
-	ServerType ConnType = ConnType(1)
+	KClient Type = Type(0)
+	KServer Type = Type(1)
 )
 
 /// <summary>
@@ -29,7 +33,8 @@ type Session interface {
 	ID() int64
 	Name() string
 	IsWebsocket() bool
-	Type() ConnType
+	Type() Type
+	Connected() bool
 	Conn() interface{}
 	SetChannel(channel transmit.IChannel)
 	SetContext(key int, val interface{})

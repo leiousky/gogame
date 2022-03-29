@@ -19,28 +19,29 @@ import (
 /// TCPConnection TCP连接会话
 /// <summary>
 type TCPConnection struct {
-	id            int64
-	name          string
-	conn          interface{}
-	context       map[int]interface{}
-	connType      conn.ConnType
-	msq           msq.MsgQueue
-	channel       transmit.IChannel
-	Wg            sync.WaitGroup
-	closing       int64
-	onConnected   cb.OnConnected
-	onMessage     cb.OnMessage
-	onClosed      cb.OnClosed
-	onWritten     cb.OnWritten
-	onError       cb.OnError
-	closeCallback cb.CloseCallback
+	id              int64
+	name            string
+	conn            interface{}
+	context         map[int]interface{}
+	connType        conn.Type
+	msq             msq.MsgQueue
+	channel         transmit.IChannel
+	Wg              sync.WaitGroup
+	closing         int64
+	state           conn.State
+	onConnection    cb.OnConnection
+	onMessage       cb.OnMessage
+	onWriteComplete cb.OnWriteComplete
+	closeCallback   cb.CloseCallback
+	errorCallback   cb.ErrorCallback
 }
 
-func NewTCPConnection(id int64, name string, conn interface{}, connType conn.ConnType, channel transmit.IChannel) conn.Session {
+func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type, channel transmit.IChannel) conn.Session {
 	peer := &TCPConnection{
 		id:       id,
 		name:     name,
-		conn:     conn,
+		conn:     c,
+		state:    conn.KDisconnected,
 		connType: connType,
 		context:  map[int]interface{}{},
 		msq:      msq.NewBlockVecMsq(),
@@ -54,6 +55,14 @@ func (s *TCPConnection) ID() int64 {
 
 func (s *TCPConnection) Name() string {
 	return s.name
+}
+
+func (s *TCPConnection) setState(state conn.State) {
+	s.state = state
+}
+
+func (s *TCPConnection) Connected() bool {
+	return s.state == conn.KConnected
 }
 
 func (s *TCPConnection) IsWebsocket() bool {
@@ -72,7 +81,7 @@ func (s *TCPConnection) Conn() interface{} {
 	return s.conn
 }
 
-func (s *TCPConnection) Type() conn.ConnType {
+func (s *TCPConnection) Type() conn.Type {
 	return s.connType
 }
 
@@ -95,28 +104,44 @@ func (s *TCPConnection) GetContext(key int) interface{} {
 	return nil
 }
 
-func (s *TCPConnection) SetOnConnected(cb cb.OnConnected) {
-	s.onConnected = cb
+func (s *TCPConnection) SetConnectionCallback(cb cb.OnConnection) {
+	s.onConnection = cb
 }
 
-func (s *TCPConnection) SetOnClosed(cb cb.OnClosed) {
-	s.onClosed = cb
-}
-
-func (s *TCPConnection) SetOnMessage(cb cb.OnMessage) {
+func (s *TCPConnection) SetMessageCallback(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *TCPConnection) SetOnError(cb cb.OnError) {
-	s.onError = cb
-}
-
-func (s *TCPConnection) SetOnWritten(cb cb.OnWritten) {
-	s.onWritten = cb
+func (s *TCPConnection) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
+	s.onWriteComplete = cb
 }
 
 func (s *TCPConnection) SetCloseCallback(cb cb.CloseCallback) {
 	s.closeCallback = cb
+}
+
+func (s *TCPConnection) SetErrorCallback(cb cb.ErrorCallback) {
+	s.errorCallback = cb
+}
+
+func (s *TCPConnection) ConnectEstablished() {
+	s.Wg.Add(1)
+	go s.readLoop()
+	go s.writeLoop()
+	s.setState(conn.KConnected)
+	if s.onConnection != nil {
+		s.onConnection(s)
+	}
+}
+
+func (s *TCPConnection) ConnectDestroyed() {
+	if s.id == 0 {
+		panic("connID == 0")
+	}
+	s.setState(conn.KDisconnected)
+	if s.onConnection != nil {
+		s.onConnection(s)
+	}
 }
 
 /// 读协程
@@ -127,8 +152,8 @@ func (s *TCPConnection) readLoop() {
 		if err != nil {
 			//log.Println("readLoop: ", err)
 			// if !IsEOFOrReadError(err) {
-			// 	if s.onError != nil {
-			// 		s.onError(s, err)
+			// 	if s.errorCallback != nil {
+			// 		s.errorCallback(err)
 			// 	}
 			// }
 			break
@@ -137,7 +162,7 @@ func (s *TCPConnection) readLoop() {
 			log.Fatalln("readLoop: msg == nil")
 		}
 		if s.onMessage != nil {
-			s.onMessage(msg, s)
+			s.onMessage(s, msg, utils.TimeNow())
 		}
 	}
 	//对端关闭连接
@@ -163,14 +188,14 @@ func (s *TCPConnection) writeLoop() {
 			if err != nil {
 				log.Println("writeLoop: ", err)
 				if !transmit.IsEOFOrWriteError(err) {
-					if s.onError != nil {
-						s.onError(s, err)
+					if s.errorCallback != nil {
+						s.errorCallback(err)
 					}
 				}
 				//break
 			}
-			if s.onWritten != nil {
-				s.onWritten(msg, s)
+			if s.onWriteComplete != nil {
+				s.onWriteComplete(s)
 			}
 		}
 		if exit {
