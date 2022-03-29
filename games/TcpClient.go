@@ -1,18 +1,18 @@
 package main
 
 import (
-	"games/core/net"
+	"games/core/conn/tcp"
 	"log"
 )
 
 type TCPClient struct {
-	net.TCPClient
-	c *net.Connector
+	tcp.TCPClient
+	c *tcp.Connector
 }
 
-func NewTCPClient() net.TCPClient {
+func NewTCPClient() tcp.TCPClient {
 	return &TCPClient{
-		c: net.NewConnector()}
+		c: tcp.NewConnector()}
 }
 
 func (s *TCPClient) OnConnected(peer interface{}) {
