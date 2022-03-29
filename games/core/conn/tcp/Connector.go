@@ -15,7 +15,7 @@ import (
 )
 
 /// <summary>
-/// Connector 客户端连接器
+/// Connector TCP连接器
 /// <summary>
 type Connector interface {
 	SetOnConnected(cb cb.OnConnected)
@@ -31,12 +31,12 @@ type Connector interface {
 }
 
 /// <summary>
-/// sessions 客户端会话容器
+/// sessions 客户端容器
 /// <summary>
 var sessions = conn.NewSessions()
 
 /// <summary>
-/// Connector 客户端连接器
+/// Connector TCP连接器
 /// <summary>
 type connector struct {
 	peer        conn.Session
@@ -91,11 +91,11 @@ func (s *connector) connectTCP(name, address string) int {
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
 		conn.ClientType, transmit.NewTCPChannel())
-	s.peer.SetOnConnected(s.onConnected)
-	s.peer.SetOnMessage(s.onMessage)
-	s.peer.SetOnClosed(s.onClosed)
-	s.peer.SetOnWritten(s.onWritten)
-	s.peer.SetOnError(s.onError)
+	s.peer.(*TCPConnection).SetOnConnected(s.onConnected)
+	s.peer.(*TCPConnection).SetOnMessage(s.onMessage)
+	s.peer.(*TCPConnection).SetOnClosed(s.onClosed)
+	s.peer.(*TCPConnection).SetOnWritten(s.onWritten)
+	s.peer.(*TCPConnection).SetOnError(s.onError)
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
 	}
@@ -123,11 +123,11 @@ func (s *connector) connectWS(name, address string) int {
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
 		conn.ClientType, transmit.NewWSChannel())
-	s.peer.SetOnConnected(s.onConnected)
-	s.peer.SetOnMessage(s.onMessage)
-	s.peer.SetOnClosed(s.onClosed)
-	s.peer.SetOnWritten(s.onWritten)
-	s.peer.SetOnError(s.onError)
+	s.peer.(*TCPConnection).SetOnConnected(s.onConnected)
+	s.peer.(*TCPConnection).SetOnMessage(s.onMessage)
+	s.peer.(*TCPConnection).SetOnClosed(s.onClosed)
+	s.peer.(*TCPConnection).SetOnWritten(s.onWritten)
+	s.peer.(*TCPConnection).SetOnError(s.onError)
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
 	}

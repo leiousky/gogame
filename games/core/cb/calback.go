@@ -1,22 +1,24 @@
 package cb
 
-type CloseCallback func(peer interface{})
+import "games/core/conn"
 
-type OnConnected func(peer interface{})
+type CloseCallback func(peer conn.Session)
 
-type OnClosed func(peer interface{})
+type OnConnected func(peer conn.Session)
 
-type OnMessage func(msg interface{}, peer interface{})
+type OnClosed func(peer conn.Session)
 
-type OnWritten func(msg interface{}, peer interface{})
+type OnMessage func(msg interface{}, peer conn.Session)
 
-type OnError func(peer interface{}, err error)
+type OnWritten func(msg interface{}, peer conn.Session)
 
-type ReadCallback func(cmd uint32, msg interface{}, peer interface{})
+type OnError func(peer conn.Session, err error)
 
-type CustomCallback func(cmd uint32, msg interface{}, peer interface{})
+type ReadCallback func(cmd uint32, msg interface{}, peer conn.Session)
 
-type CmdCallback func(msg interface{}, peer interface{})
+type CustomCallback func(cmd uint32, msg interface{}, peer conn.Session)
+
+type CmdCallback func(msg interface{}, peer conn.Session)
 
 type CmdCallbacks map[uint32]CmdCallback
 

@@ -6,15 +6,15 @@ import (
 )
 
 /// <summary>
-/// TCPClient
+/// TCPClient TCP客户端
 /// <summary>
 type TCPClient interface {
 	Session() conn.Session
 	Write(msg interface{})
 	ConnectTCP(name, address string)
-	OnConnected(peer interface{})
-	OnMessage(msg interface{}, peer interface{})
-	OnClosed(peer interface{})
+	OnConnected(peer conn.Session)
+	OnMessage(msg interface{}, peer conn.Session)
+	OnClosed(peer conn.Session)
 	Reconnect(d time.Duration)
 	Disconnect()
 }

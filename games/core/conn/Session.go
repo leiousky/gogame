@@ -1,7 +1,6 @@
 package conn
 
 import (
-	"games/core/cb"
 	"games/core/conn/transmit"
 )
 
@@ -23,6 +22,9 @@ const (
 	ServerType ConnType = ConnType(1)
 )
 
+/// <summary>
+/// Session 连接会话
+/// <summary>
 type Session interface {
 	ID() int64
 	Name() string
@@ -34,11 +36,4 @@ type Session interface {
 	GetContext(key int) interface{}
 	Close()
 	Write(msg interface{})
-
-	SetOnConnected(cb cb.OnConnected)
-	SetOnMessage(cb cb.OnMessage)
-	SetOnClosed(cb cb.OnClosed)
-	SetOnError(cb cb.OnError)
-	SetOnWritten(cb cb.OnWritten)
-	SetCloseCallback(cb cb.CloseCallback)
 }

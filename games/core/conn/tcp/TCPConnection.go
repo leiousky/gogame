@@ -16,7 +16,7 @@ import (
 )
 
 /// <summary>
-/// TCPConnection TCP/WS连接会话
+/// TCPConnection TCP连接会话
 /// <summary>
 type TCPConnection struct {
 	id            int64
