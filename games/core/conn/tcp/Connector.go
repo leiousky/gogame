@@ -18,16 +18,16 @@ import (
 /// Connector TCP连接器
 /// <summary>
 type Connector interface {
-	SetOnConnected(cb cb.OnConnected)
-	SetOnMessage(cb cb.OnMessage)
-	SetOnClosed(cb cb.OnClosed)
-	SetOnWritten(cb cb.OnWritten)
-	SetOnError(cb cb.OnError)
 	Session() conn.Session
 	Write(msg interface{})
 	ConnectTCP(name, address string)
 	Reconnect(d time.Duration)
 	Disconnect()
+	SetOnConnected(cb cb.OnConnected)
+	SetOnMessage(cb cb.OnMessage)
+	SetOnClosed(cb cb.OnClosed)
+	SetOnWritten(cb cb.OnWritten)
+	SetOnError(cb cb.OnError)
 }
 
 /// <summary>

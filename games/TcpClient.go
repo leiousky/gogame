@@ -15,8 +15,18 @@ type TCPClient struct {
 }
 
 func NewTCPClient() tcp.TCPClient {
-	return &TCPClient{
+	s := &TCPClient{
 		c: tcp.NewConnector()}
+	s.c.SetOnConnected(s.OnConnected)
+	s.c.SetOnMessage(s.OnMessage)
+	s.c.SetOnClosed(s.OnClosed)
+	s.c.SetOnWritten(s.OnWritten)
+	s.c.SetOnError(s.OnError)
+	return s
+}
+
+func (s *TCPClient) ConnectTCP(name string, address string) {
+	s.c.ConnectTCP(name, address)
 }
 
 func (s *TCPClient) OnConnected(peer conn.Session) {
@@ -32,6 +42,7 @@ func (s *TCPClient) OnClosed(peer conn.Session) {
 }
 
 func (s *TCPClient) OnWritten(msg interface{}, peer conn.Session) {
+	log.Print("--- *** TCPClient - TCPClient:: OnWritten \n")
 }
 
 func (s *TCPClient) OnError(peer conn.Session, err error) {
