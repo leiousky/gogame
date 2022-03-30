@@ -16,8 +16,7 @@ import (
 /// ITCPServer TCP服务端
 /// <summary>
 type ITCPServer interface {
-	Start()
-	Stop()
+	ListenTCP(address string)
 	OnConnection(peer conn.Session)
 	OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
 	OnWriteComplete(peer conn.Session)
@@ -78,11 +77,7 @@ func (s *TCPServer) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
 	s.onWriteComplete = cb
 }
 
-func (s *TCPServer) Start() {
-
-}
-
-func (s *TCPServer) Stop() {
+func (s *TCPServer) ListenTCP(address string) {
 
 }
 
