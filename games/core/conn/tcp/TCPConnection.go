@@ -36,7 +36,7 @@ type TCPConnection struct {
 	errorCallback   cb.ErrorCallback
 }
 
-func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type) conn.Session {
+func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type, channel transmit.IChannel) conn.Session {
 	peer := &TCPConnection{
 		id:       id,
 		name:     name,
@@ -44,7 +44,8 @@ func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type) 
 		state:    conn.KDisconnected,
 		connType: connType,
 		context:  map[int]interface{}{},
-		msq:      msq.NewBlockVecMsq()}
+		msq:      msq.NewBlockVecMsq(),
+		channel:  channel}
 	return peer
 }
 

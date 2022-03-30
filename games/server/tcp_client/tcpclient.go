@@ -1,9 +1,13 @@
-package tcpclient
+package tcp_client
 
 import (
+	"fmt"
 	"games/comm/utils"
 	"games/core/conn"
 	"games/core/conn/tcp"
+	"games/core/conn/transmit"
+	"games/server/stream/tcp_stream"
+	"games/server/stream/ws_stream"
 	"log"
 )
 
@@ -12,18 +16,26 @@ import (
 /// <summary>
 type TCPClient struct {
 	tcp.TCPClient
-	tcp_c tranit.ICannel
-	s_c transmit.IChannel
-c tcp.Connector
+	c tcp.Connector
 }
 
 func NewTCPClient() tcp.TCPClient {
-	s := &TCPClient{
-		c: tcp.NewConnector()}
+	s := &TCPClient{c: tcp.NewConnector()}
+	s.c.SetProtocolCallback(s.onProtocol)
 	s.c.SetConnectionCallback(s.OnConnection)
 	s.c.SetMessageCallback(s.OnMessage)
 	s.c.SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
+}
+
+func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
+	switch proto {
+	case "tcp":
+		return tcp_stream.NewChannel()
+	case "ws":
+		return ws_stream.NewChannel()
+	}
+	panic(fmt.Sprintf("no proto setup"))
 }
 
 func (s *TCPClient) ConnectTCP(name string, address string) {

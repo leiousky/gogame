@@ -20,9 +20,10 @@ import (
 type Connector interface {
 	Session() conn.Session
 	Write(msg interface{})
-	ConnectTCP(name, address string)
+	ConnectTCP(name, address string) string
 	Reconnect(d time.Duration)
 	Disconnect()
+	SetProtocolCallback(cb cb.OnProtocol)
 	SetConnectionCallback(cb cb.OnConnection)
 	SetMessageCallback(cb cb.OnMessage)
 	SetWriteCompleteCallback(cb cb.OnWriteComplete)
@@ -38,6 +39,7 @@ var sessions = conn.NewSessions()
 /// <summary>
 type connector struct {
 	peer            conn.Session
+	onProtocol      cb.OnProtocol
 	onConnection    cb.OnConnection
 	onMessage       cb.OnMessage
 	onWriteComplete cb.OnWriteComplete
@@ -48,6 +50,10 @@ type connector struct {
 func NewConnector() Connector {
 	s := &connector{}
 	return s
+}
+
+func (s *connector) SetProtocolCallback(cb cb.OnProtocol) {
+	s.onProtocol = cb
 }
 
 func (s *connector) SetConnectionCallback(cb cb.OnConnection) {
@@ -86,7 +92,8 @@ func (s *connector) connectTCP(name, address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient)
+	channel := s.onProtocol("tcp")
+	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient, channel)
 	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
@@ -117,7 +124,8 @@ func (s *connector) connectWS(name, address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient)
+	channel := s.onProtocol("ws")
+	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient, channel)
 	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
@@ -130,10 +138,12 @@ func (s *connector) connectWS(name, address string) int {
 	return 0
 }
 
-func (s *connector) ConnectTCP(name, address string) {
+func (s *connector) ConnectTCP(name, address string) string {
 	if s.connectWS(name, address) == -1 {
 		s.connectTCP(name, address)
+		return "tcp"
 	}
+	return "ws"
 }
 
 func (s *connector) removeConnection(peer conn.Session) {

@@ -3,7 +3,10 @@ package callback
 import (
 	"games/comm/utils"
 	"games/core/conn"
+	"games/core/conn/transmit"
 )
+
+type OnProtocol func(proto string) transmit.IChannel
 
 type OnConnection func(peer conn.Session)
 
