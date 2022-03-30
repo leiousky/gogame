@@ -80,11 +80,12 @@ const (
 )
 
 /// 创建消息处理器
+/// newMsgProc()执行必须在Run()的go协程中调用，不然tid获取不对
 func newMsgProc(creator IWorkerCreator, size int, args ...interface{}) IProc {
 	s := &Proc{
 		msQ:     make(chan interface{}, 1000),
 		l:       &sync.Mutex{},
-		tid:     utils.GoroutineID(), //newMsgProc()执行必须在Run()的go协程中调用，不然tid获取不对
+		tid:     utils.GoroutineID(),
 		msq:     msq.NewFreeVecMsq(),
 		lock:    &sync.RWMutex{},
 		timerv2: timerv2.NewSafeTimerScheduel(),
@@ -92,8 +93,7 @@ func newMsgProc(creator IWorkerCreator, size int, args ...interface{}) IProc {
 	s.worker = creator.Create(s)                           //线程局部worker
 	s.timerWheel = timer.NewTimerWheel(s.tid, int32(size)) //指定时间轮大小
 	s.timer = timer.NewScopedTimer(s.tid)                  //线程局部定时器
-	//worker初始化参数
-	s.args = append(s.args, args...)
+	s.args = append(s.args, args...)                       //worker初始化参数
 	return s
 }
 
