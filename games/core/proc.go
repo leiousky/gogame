@@ -16,7 +16,7 @@ import (
 )
 
 /// <summary>
-// 消息处理器接口
+/// IProc 消息处理器接口
 /// <summary>
 type IProc interface {
 	/// 协程ID
@@ -55,7 +55,7 @@ type IProc interface {
 }
 
 /// <summary>
-/// 消息处理器
+/// Proc 消息处理器
 /// <summary>
 type Proc struct {
 	msQ        chan interface{}

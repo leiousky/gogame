@@ -6,7 +6,7 @@ import (
 )
 
 /// <summary>
-/// 消息处理单元接口
+/// ISlot 消息处理单元接口
 /// <summary>
 type ISlot interface {
 	//添加worker初始化参数
@@ -25,7 +25,7 @@ const (
 )
 
 /// <summary>
-/// 消息处理单元
+/// Slot 消息处理单元
 /// <summary>
 type Slot struct {
 	proc    IProc //消息处理器
@@ -43,7 +43,7 @@ func NewMsgSlot(creator IWorkerCreator) ISlot {
 	return s
 }
 
-//添加worker初始化参数
+/// 添加worker初始化参数
 func (s *Slot) Add(args ...interface{}) {
 	s.args = append(s.args, args...)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 /// <summary>
-/// 邮槽管理器接口
+/// IMailbox 邮槽管理器接口
 /// <summary>
 type IMailbox interface {
 	/// 添加若干邮槽
@@ -27,7 +27,7 @@ type IMailbox interface {
 }
 
 /// <summary>
-/// cell处理池子
+/// Mailbox cell处理池子
 /// <summary>
 type Mailbox struct {
 	slots []ISlot
