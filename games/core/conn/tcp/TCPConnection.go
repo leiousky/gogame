@@ -150,9 +150,9 @@ func (s *TCPConnection) SetErrorCallback(cb cb.ErrorCallback) {
 
 func (s *TCPConnection) ConnectEstablished() {
 	s.Wg.Add(1)
+	s.setState(conn.KConnected)
 	go s.readLoop()
 	go s.writeLoop()
-	s.setState(conn.KConnected)
 	if s.onConnection != nil {
 		s.onConnection(s)
 	}

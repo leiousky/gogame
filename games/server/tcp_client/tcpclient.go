@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"games/comm/utils"
 	"games/core/conn"
-	"games/core/conn/tcp"
+	"games/core/conn/tcp/tcpclient"
 	"games/core/conn/transmit"
 	"games/server/stream/tcp_stream"
 	"games/server/stream/ws_stream"
@@ -15,12 +15,12 @@ import (
 /// TCPClient TCP客户端
 /// <summary>
 type TCPClient struct {
-	tcp.TCPClient
-	c tcp.Connector
+	tcpclient.ITCPClient
+	c tcpclient.TCPClient
 }
 
-func NewTCPClient() tcp.TCPClient {
-	s := &TCPClient{c: tcp.NewConnector()}
+func NewTCPClient() tcpclient.ITCPClient {
+	s := &TCPClient{}
 	s.c.SetProtocolCallback(s.onProtocol)
 	s.c.SetConnectionCallback(s.OnConnection)
 	s.c.SetMessageCallback(s.OnMessage)
@@ -38,8 +38,8 @@ func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
 	panic(fmt.Sprintf("no proto setup"))
 }
 
-func (s *TCPClient) ConnectTCP(name string, address string) {
-	s.c.ConnectTCP(name, address)
+func (s *TCPClient) ConnectTCP(address string) {
+	s.c.ConnectTCP(address)
 }
 
 func (s *TCPClient) OnConnection(peer conn.Session) {

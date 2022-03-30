@@ -16,7 +16,7 @@ import (
 func main() {
 
 	tcpclient := tcp_client.NewTCPClient()
-	tcpclient.ConnectTCP("tcpclient", "127.0.0.1:8099")
+	tcpclient.ConnectTCP("127.0.0.1:8099")
 	return
 	var GameInfo define.GameInfo //游戏类型
 	var RoomInfo define.RoomInfo //游戏房间

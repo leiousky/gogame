@@ -3,8 +3,6 @@ package tcp
 import (
 	"fmt"
 	cb "games/core/callback"
-	"games/core/conn"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -18,33 +16,18 @@ import (
 /// Connector TCP连接器
 /// <summary>
 type Connector interface {
-	Session() conn.Session
-	Write(msg interface{})
-	ConnectTCP(name, address string) string
+	ConnectTCP(address string) string
 	Reconnect(d time.Duration)
-	Disconnect()
 	SetProtocolCallback(cb cb.OnProtocol)
-	SetConnectionCallback(cb cb.OnConnection)
-	SetMessageCallback(cb cb.OnMessage)
-	SetWriteCompleteCallback(cb cb.OnWriteComplete)
+	SetNewConnectionCallback(cb cb.OnNewConnection)
 }
-
-/// <summary>
-/// sessions 客户端容器
-/// <summary>
-var sessions = conn.NewSessions()
 
 /// <summary>
 /// Connector TCP连接器
 /// <summary>
 type connector struct {
-	peer            conn.Session
 	onProtocol      cb.OnProtocol
-	onConnection    cb.OnConnection
-	onMessage       cb.OnMessage
-	onWriteComplete cb.OnWriteComplete
-	closeCallback   cb.CloseCallback
-	errorCallback   cb.ErrorCallback
+	onNewConnection cb.OnNewConnection
 }
 
 func NewConnector() Connector {
@@ -56,39 +39,16 @@ func (s *connector) SetProtocolCallback(cb cb.OnProtocol) {
 	s.onProtocol = cb
 }
 
-func (s *connector) SetConnectionCallback(cb cb.OnConnection) {
-	s.onConnection = cb
+func (s *connector) SetNewConnectionCallback(cb cb.OnNewConnection) {
+	s.onNewConnection = cb
 }
 
-func (s *connector) SetMessageCallback(cb cb.OnMessage) {
-	s.onMessage = cb
-}
-
-func (s *connector) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
-	s.onWriteComplete = cb
-}
-
-func (s *connector) SetCloseCallback(cb cb.CloseCallback) {
-	s.closeCallback = cb
-}
-
-func (s *connector) SetErrorCallback(cb cb.ErrorCallback) {
-	s.errorCallback = cb
-}
-
-func (s *connector) Session() conn.Session {
-	return s.peer
-}
-
-func (s *connector) Write(msg interface{}) {
-	if s.peer != nil {
-		s.peer.Write(msg)
-	}
-}
-
-func (s *connector) connectTCP(name, address string) int {
+func (s *connector) connectTCP(address string) int {
 	if s.onProtocol == nil {
 		panic(fmt.Sprintf("connectTCP s.onProtocol == nil"))
+	}
+	if s.onNewConnection == nil {
+		panic(fmt.Sprintf("connectTCP s.onNewConnection == nil"))
 	}
 	c, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
@@ -96,22 +56,16 @@ func (s *connector) connectTCP(name, address string) int {
 		return 1
 	}
 	channel := s.onProtocol("tcp")
-	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient, channel)
-	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
-	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
-	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
-	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
-	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
-	s.peer.(*TCPConnection).ConnectEstablished()
-	if !sessions.Add(s.peer) {
-		s.peer.Close()
-	}
+	s.onNewConnection(c, channel)
 	return 0
 }
 
-func (s *connector) connectWS(name, address string) int {
+func (s *connector) connectWS(address string) int {
 	if s.onProtocol == nil {
 		panic(fmt.Sprintf("connectWS s.onProtocol == nil"))
+	}
+	if s.onNewConnection == nil {
+		panic(fmt.Sprintf("connectWS s.onNewConnection == nil"))
 	}
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")
@@ -131,41 +85,17 @@ func (s *connector) connectWS(name, address string) int {
 		return 1
 	}
 	channel := s.onProtocol("ws")
-	s.peer = NewTCPConnection(conn.NewConnID(), name, c, conn.KClient, channel)
-	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
-	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
-	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
-	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
-	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
-	s.peer.(*TCPConnection).ConnectEstablished()
-	if !sessions.Add(s.peer) {
-		s.peer.Close()
-	}
+	s.onNewConnection(c, channel)
 	return 0
 }
 
-func (s *connector) ConnectTCP(name, address string) string {
-	if s.connectWS(name, address) == -1 {
-		s.connectTCP(name, address)
+func (s *connector) ConnectTCP(address string) string {
+	if s.connectWS(address) == -1 {
+		s.connectTCP(address)
 		return "tcp"
 	}
 	return "ws"
 }
 
-func (s *connector) removeConnection(peer conn.Session) {
-	sessions.Remove(peer)
-	peer.(*TCPConnection).ConnectDestroyed()
-}
-
-func (s *connector) onConnectionError(err error) {
-	log.Print("--- *** connector - connector:: onConnectionError \n")
-}
-
 func (s *connector) Reconnect(d time.Duration) {
-}
-
-func (s *connector) Disconnect() {
-	if s.peer != nil {
-		s.peer.Close()
-	}
 }
