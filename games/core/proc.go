@@ -68,7 +68,7 @@ type Proc struct {
 	timerWheel timer.TimerWheel  //时间轮盘
 	dispatcher IProc             //分派任务到其他IProc
 	args       []interface{}     //任务参数
-	cbs        []func()          //空闲回调
+	funcs      []func()          //空闲回调
 	lock       *sync.RWMutex
 	timerv2    *timerv2.SafeTimerScheduel //协程安全定时器
 	selectQ    int
@@ -229,24 +229,24 @@ func (s *Proc) Exec(cb func()) {
 /// 添加空闲回调
 func (s *Proc) Append(cb func()) {
 	s.lock.Lock()
-	s.cbs = append(s.cbs, cb)
+	s.funcs = append(s.funcs, cb)
 	s.lock.Unlock()
 	s.msq.Signal()
 }
 
 /// 执行空闲回调
-func (s *Proc) execFunc() {
+func (s *Proc) doFunctors() {
 	s.AssertInThread()
-	var cbs []func()
+	var funcs []func()
 	{
 		s.lock.Lock()
-		if len(s.cbs) > 0 {
-			cbs = s.cbs[:]
-			s.cbs = s.cbs[0:0]
+		if len(s.funcs) > 0 {
+			funcs = s.funcs[:]
+			s.funcs = s.funcs[0:0]
 		}
 		s.lock.Unlock()
 	}
-	for _, cb := range cbs {
+	for _, cb := range funcs {
 		cb()
 	}
 }
@@ -313,11 +313,11 @@ EXIT:
 			}
 			break
 		default:
-			//log.Println("execFunc...")
+			//log.Println("doFunctors...")
 			//处理空闲回调
 			utils.SafeCall(
 				func() {
-					s.execFunc()
+					s.doFunctors()
 				})
 		}
 	}
@@ -386,11 +386,11 @@ EXIT:
 				break
 			}
 		}
-		log.Println("execFunc...")
+		log.Println("doFunctors...")
 		//处理空闲回调
 		utils.SafeCall(
 			func() {
-				s.execFunc()
+				s.doFunctors()
 			})
 		if exit {
 			break EXIT
