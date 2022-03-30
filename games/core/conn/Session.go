@@ -36,6 +36,8 @@ type Session interface {
 	Type() Type
 	Connected() bool
 	Conn() interface{}
+	LocalAddr() string
+	RemoteAddr() string
 	SetChannel(channel transmit.IChannel)
 	SetContext(key int, val interface{})
 	GetContext(key int) interface{}

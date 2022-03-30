@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"fmt"
 	"games/comm/utils"
 	cb "games/core/callback"
 	"games/core/conn"
@@ -62,6 +63,30 @@ func (s *TCPConnection) setState(state conn.State) {
 
 func (s *TCPConnection) Connected() bool {
 	return s.state == conn.KConnected
+}
+
+func (s *TCPConnection) LocalAddr() string {
+	if s.conn == nil {
+		panic(fmt.Sprintf("s.conn == nil"))
+	}
+	if c, ok := s.conn.(net.Conn); ok {
+		return c.LocalAddr().String()
+	} else if c, ok := s.conn.(*websocket.Conn); ok {
+		return c.LocalAddr().String()
+	}
+	return ""
+}
+
+func (s *TCPConnection) RemoteAddr() string {
+	if s.conn == nil {
+		panic(fmt.Sprintf("s.conn == nil"))
+	}
+	if c, ok := s.conn.(net.Conn); ok {
+		return c.RemoteAddr().String()
+	} else if c, ok := s.conn.(*websocket.Conn); ok {
+		return c.RemoteAddr().String()
+	}
+	return ""
 }
 
 func (s *TCPConnection) IsWebsocket() bool {
