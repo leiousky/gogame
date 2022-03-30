@@ -103,7 +103,7 @@ func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf(":%v#%v", peerAddr, connID),
+			s.name+fmt.Sprintf("-%v#%v", peerAddr, connID),
 			c,
 			conn.KClient,
 			channel)

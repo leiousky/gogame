@@ -3,6 +3,7 @@ package tcp
 import (
 	"fmt"
 	cb "games/core/callback"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -52,7 +53,7 @@ func (s *connector) connectTCP(address string) int {
 	}
 	c, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return 1
 	}
 	channel := s.onProtocol("tcp")
@@ -81,7 +82,7 @@ func (s *connector) connectWS(address string) int {
 	u := url.URL{Scheme: proto, Host: host, Path: "/"}
 	c, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return 1
 	}
 	channel := s.onProtocol("ws")
