@@ -1,4 +1,4 @@
-package transmit
+package ws_channel
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 )
 
 /// 读指定长度
-func WSReadFull(conn *websocket.Conn) (buf []byte, err error) {
+func ReadFull(conn *websocket.Conn) (buf []byte, err error) {
 	length := 0
 	size := len(buf)
 	for {
@@ -15,7 +15,7 @@ func WSReadFull(conn *websocket.Conn) (buf []byte, err error) {
 		_, b, e := conn.ReadMessage()
 		if err != nil {
 			err = e
-			log.Print("WsReadFull : ", err)
+			log.Print("ws_channel.ReadFull : ", err)
 			return
 		}
 		n := len(b)

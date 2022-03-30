@@ -1,4 +1,4 @@
-package transmit
+package tcp_channel
 
 import (
 	"log"
@@ -12,7 +12,7 @@ func ReadFull(conn net.Conn, buf []byte) error {
 	for {
 		n, err := conn.Read(buf[length:size])
 		if err != nil {
-			log.Print("ReadFull : ", err)
+			log.Print("tcp_channel.ReadFull : ", err)
 			return err
 		}
 		length += n

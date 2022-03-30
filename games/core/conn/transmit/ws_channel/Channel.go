@@ -1,31 +1,31 @@
-package transmit
+package ws_channel
 
 import (
 	"encoding/binary"
-	"errors"
+	"games/core/conn/transmit"
 	"log"
 
 	"github.com/gorilla/websocket"
 )
 
 /// <summary>
-/// WSChannel WS传输
+/// Channel WS传输
 /// <summary>
-type WSChannel struct {
+type Channel struct {
 }
 
-func NewWSChannel() IChannel {
-	return &WSChannel{}
+func NewChannel() transmit.IChannel {
+	return &Channel{}
 }
 
-func (s *WSChannel) OnRecvMessage(peer interface{}) (interface{}, error) {
-	conn, ok := peer.(*websocket.Conn)
-	if !ok || conn == nil {
+func (s *Channel) OnRecvMessage(conn interface{}) (interface{}, error) {
+	c, ok := conn.(*websocket.Conn)
+	if !ok || c == nil {
 		return nil, nil
 	}
 	//len+CRC，4字节
 	//conn.SetReadLimit(4)
-	msgType, buf, err := conn.ReadMessage()
+	msgType, buf, err := c.ReadMessage()
 	if err != nil {
 		//log.Println("OnRecvMessage ReadMessage: ", err)
 		return nil, err
@@ -42,7 +42,7 @@ func (s *WSChannel) OnRecvMessage(peer interface{}) (interface{}, error) {
 		return nil, nil
 	}
 	//CRC，2字节
-	chsum := binary.LittleEndian.Uint16(buf[2:])
+	//chsum := binary.LittleEndian.Uint16(buf[2:])
 	// 读取剩余大小
 	//conn.SetReadLimit(int64(len - 4))
 	//_, remain, err := conn.ReadMessage()
@@ -51,11 +51,11 @@ func (s *WSChannel) OnRecvMessage(peer interface{}) (interface{}, error) {
 	//	return nil, err
 	//}
 	//CRC校验
-	crc := GetChecksum(buf[4:])
-	if crc != chsum {
-		log.Fatalln("OnRecvMessage: GetChecksum error")
-		return nil, errors.New("GetChecksum error")
-	}
+	// crc := GetChecksum(buf[4:])
+	// if crc != chsum {
+	// 	log.Fatalln("OnRecvMessage: GetChecksum error")
+	// 	return nil, errors.New("GetChecksum error")
+	// }
 	// //版本0x0001
 	// ver := binary.LittleEndian.Uint16(buf[4:])
 	// //标记0x5F5F
@@ -104,16 +104,16 @@ func (s *WSChannel) OnRecvMessage(peer interface{}) (interface{}, error) {
 	return nil, err
 }
 
-func (s *WSChannel) OnSendMessage(peer interface{}, msg interface{}) error {
-	conn, ok := peer.(*websocket.Conn)
-	if !ok || conn == nil {
+func (s *Channel) OnSendMessage(conn interface{}, msg interface{}) error {
+	c, ok := conn.(*websocket.Conn)
+	if !ok || c == nil {
 		return nil
 	}
 	//log.Println("MyWSChannel::OnSendMessage ", msg)
-	h, ok := msg.(*Msg)
-	if !ok || h == nil {
-		return nil
-	}
+	// h, ok := msg.(*Msg)
+	// if !ok || h == nil {
+	// 	return nil
+	// }
 	return nil
 	// data, _, err := codec.EncodeMessage(h.msg, nil)
 	// if err != nil {

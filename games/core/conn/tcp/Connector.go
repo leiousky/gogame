@@ -4,7 +4,8 @@ import (
 	"fmt"
 	cb "games/core/callback"
 	"games/core/conn"
-	"games/core/conn/transmit"
+	"games/core/conn/transmit/tcp_channel"
+	"games/core/conn/transmit/ws_channel"
 	"log"
 	"net"
 	"net/http"
@@ -89,7 +90,7 @@ func (s *connector) connectTCP(name, address string) int {
 	}
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
-		conn.KClient, transmit.NewTCPChannel())
+		conn.KClient, tcp_channel.NewChannel())
 	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
@@ -122,7 +123,7 @@ func (s *connector) connectWS(name, address string) int {
 	}
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
-		conn.KClient, transmit.NewWSChannel())
+		conn.KClient, ws_channel.NewChannel())
 	s.peer.(*TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*TCPConnection).SetMessageCallback(s.onMessage)
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)

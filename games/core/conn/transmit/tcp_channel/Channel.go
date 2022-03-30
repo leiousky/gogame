@@ -1,21 +1,26 @@
-package transmit
+package tcp_channel
+
+import (
+	"games/core/conn/transmit"
+	"net"
+)
 
 /// <summary>
-/// TCPChannel TCP传输
+/// Channel TCP传输
 /// <summary>
-type TCPChannel struct {
+type Channel struct {
 }
 
-func NewTCPChannel() IChannel {
-	return &TCPChannel{}
+func NewChannel() transmit.IChannel {
+	return &Channel{}
 }
 
-func (s *TCPChannel) OnRecvMessage(peer interface{}) (msg interface{}, err error) {
+func (s *Channel) OnRecvMessage(conn interface{}) (msg interface{}, err error) {
+	c, ok := conn.(net.Conn)
+	if !ok || c == nil {
+		return nil, nil
+	}
 	return nil, nil
-	// conn, ok := peer.(net.Conn)
-	// if !ok || conn == nil {
-	// 	return nil, nil
-	// }
 	// //len+CRC，4字节
 	// buf := make([]byte, 4)
 	// err = ReadFull(conn, buf)
@@ -64,12 +69,12 @@ func (s *TCPChannel) OnRecvMessage(peer interface{}) (msg interface{}, err error
 	// return msg, err
 }
 
-func (s *TCPChannel) OnSendMessage(peer interface{}, msg interface{}) error {
+func (s *Channel) OnSendMessage(conn interface{}, msg interface{}) error {
+	c, ok := conn.(net.Conn)
+	if !ok || c == nil {
+		return nil
+	}
 	return nil
-	// conn, ok := peer.(net.Conn)
-	// if !ok || conn == nil {
-	// 	return nil
-	// }
 	// log.Println("MyTCPChannel::OnSendMessage\n", msg)
 	// h, ok := msg.(*Msg)
 	// if !ok || h == nil {
