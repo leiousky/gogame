@@ -2,6 +2,7 @@ package tcp_channel
 
 import (
 	"games/core/conn/transmit"
+	"log"
 	"net"
 )
 
@@ -21,13 +22,13 @@ func (s *Channel) OnRecvMessage(conn interface{}) (msg interface{}, err error) {
 		return nil, nil
 	}
 	return nil, nil
-	// //len+CRC，4字节
-	// buf := make([]byte, 4)
-	// err = ReadFull(conn, buf)
-	// if err != nil {
-	// 	log.Fatalln("OnRecvMessage: ", err)
-	// 	return nil, err
-	// }
+	//len+CRC，4字节
+	buf := make([]byte, 4)
+	err = ReadFull(c, buf)
+	if err != nil {
+		log.Fatalln("OnRecvMessage: ", err)
+		return nil, err
+	}
 	// //len，2字节
 	// len := binary.LittleEndian.Uint16(buf[:2])
 	// //CRC，2字节
