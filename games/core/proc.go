@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 	"games/comm/utils"
-	"games/core/cb"
+	cb "games/core/callback"
 	"games/core/conn"
 	"games/core/msq"
 	"games/core/timer"

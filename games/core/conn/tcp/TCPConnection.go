@@ -2,11 +2,10 @@ package tcp
 
 import (
 	"games/comm/utils"
-	"games/core/cb"
+	cb "games/core/callback"
 	"games/core/conn"
 	"games/core/conn/transmit"
 	"games/core/msq"
-
 	"log"
 	"net"
 	"sync"

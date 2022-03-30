@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"games/comm/utils"
-	"games/core/cb"
+	cb "games/core/callback"
 	"games/core/conn"
 )
 

@@ -1,4 +1,4 @@
-package cb
+package callback
 
 import (
 	"games/comm/utils"

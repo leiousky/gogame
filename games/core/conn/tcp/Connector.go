@@ -2,7 +2,7 @@ package tcp
 
 import (
 	"fmt"
-	"games/core/cb"
+	cb "games/core/callback"
 	"games/core/conn"
 	"games/core/conn/transmit"
 	"log"
@@ -95,10 +95,9 @@ func (s *connector) connectTCP(name, address string) int {
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
 	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
 	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
+	s.peer.(*TCPConnection).ConnectEstablished()
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
-	} else {
-		s.peer.(*TCPConnection).ConnectEstablished()
 	}
 	return 0
 }
@@ -121,7 +120,6 @@ func (s *connector) connectWS(name, address string) int {
 		fmt.Println(err)
 		return 1
 	}
-	//newConnection
 	s.peer = NewTCPConnection(
 		conn.NewConnID(), name, c,
 		conn.KClient, transmit.NewWSChannel())
@@ -130,10 +128,9 @@ func (s *connector) connectWS(name, address string) int {
 	s.peer.(*TCPConnection).SetWriteCompleteCallback(s.onWriteComplete)
 	s.peer.(*TCPConnection).SetCloseCallback(s.removeConnection)
 	s.peer.(*TCPConnection).SetErrorCallback(s.onConnectionError)
+	s.peer.(*TCPConnection).ConnectEstablished()
 	if !sessions.Add(s.peer) {
 		s.peer.Close()
-	} else {
-		s.peer.(*TCPConnection).ConnectEstablished()
 	}
 	return 0
 }

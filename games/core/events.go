@@ -1,7 +1,7 @@
 package core
 
 import (
-	"games/core/cb"
+	cb "games/core/callback"
 	"games/core/conn"
 )
 
