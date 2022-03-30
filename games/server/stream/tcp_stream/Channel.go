@@ -1,7 +1,8 @@
-package tcp_channel
+package tcp_stream
 
 import (
 	"games/core/conn/transmit"
+	"games/core/conn/transmit/tcp_channel"
 	"log"
 	"net"
 )
@@ -16,19 +17,19 @@ func NewChannel() transmit.IChannel {
 	return &Channel{}
 }
 
-func (s *Channel) OnRecvMessage(conn interface{}) (msg interface{}, err error) {
+func (s *Channel) OnRecv(conn interface{}) (msg interface{}, err error) {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
 		return nil, nil
 	}
-	return nil, nil
 	//len+CRC，4字节
 	buf := make([]byte, 4)
-	err = ReadFull(c, buf)
+	err = tcp_channel.ReadFull(c, buf)
 	if err != nil {
 		log.Fatalln("OnRecvMessage: ", err)
 		return nil, err
 	}
+	return buf, nil
 	// //len，2字节
 	// len := binary.LittleEndian.Uint16(buf[:2])
 	// //CRC，2字节
@@ -70,7 +71,7 @@ func (s *Channel) OnRecvMessage(conn interface{}) (msg interface{}, err error) {
 	// return msg, err
 }
 
-func (s *Channel) OnSendMessage(conn interface{}, msg interface{}) error {
+func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
 		return nil

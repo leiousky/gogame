@@ -36,7 +36,7 @@ type TCPConnection struct {
 	errorCallback   cb.ErrorCallback
 }
 
-func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type, channel transmit.IChannel) conn.Session {
+func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type) conn.Session {
 	peer := &TCPConnection{
 		id:       id,
 		name:     name,
@@ -44,8 +44,7 @@ func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type, 
 		state:    conn.KDisconnected,
 		connType: connType,
 		context:  map[int]interface{}{},
-		msq:      msq.NewBlockVecMsq(),
-		channel:  channel}
+		msq:      msq.NewBlockVecMsq()}
 	return peer
 }
 
@@ -172,7 +171,7 @@ func (s *TCPConnection) ConnectDestroyed() {
 func (s *TCPConnection) readLoop() {
 	utils.CheckPanic()
 	for {
-		msg, err := s.channel.OnRecvMessage(s.conn)
+		msg, err := s.channel.OnRecv(s.conn)
 		if err != nil {
 			//log.Println("readLoop: ", err)
 			// if !IsEOFOrReadError(err) {
@@ -208,7 +207,7 @@ func (s *TCPConnection) writeLoop() {
 	for {
 		msgs, exit := s.msq.Pick()
 		for _, msg := range msgs {
-			err := s.channel.OnSendMessage(s.conn, msg)
+			err := s.channel.OnSend(s.conn, msg)
 			if err != nil {
 				log.Println("writeLoop: ", err)
 				if !transmit.IsEOFOrWriteError(err) {

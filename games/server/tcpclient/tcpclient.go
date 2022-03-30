@@ -1,4 +1,4 @@
-package main
+package tcpclient
 
 import (
 	"games/comm/utils"
@@ -12,7 +12,9 @@ import (
 /// <summary>
 type TCPClient struct {
 	tcp.TCPClient
-	c tcp.Connector
+	tcp_c tranit.ICannel
+	s_c transmit.IChannel
+c tcp.Connector
 }
 
 func NewTCPClient() tcp.TCPClient {

@@ -14,7 +14,7 @@ import (
 //go mod tidy
 func main() {
 
-	tcpclient := NewTCPClient()
+	tcpclient := tcpclient.NewTCPClient()
 	tcpclient.ConnectTCP("tcpclient", "127.0.0.1:8099")
 	return
 	var GameInfo define.GameInfo //游戏类型

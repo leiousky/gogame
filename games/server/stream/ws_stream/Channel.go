@@ -1,4 +1,4 @@
-package ws_channel
+package ws_stream
 
 import (
 	"encoding/binary"
@@ -18,7 +18,7 @@ func NewChannel() transmit.IChannel {
 	return &Channel{}
 }
 
-func (s *Channel) OnRecvMessage(conn interface{}) (interface{}, error) {
+func (s *Channel) OnRecv(conn interface{}) (interface{}, error) {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
 		return nil, nil
@@ -104,7 +104,7 @@ func (s *Channel) OnRecvMessage(conn interface{}) (interface{}, error) {
 	return nil, err
 }
 
-func (s *Channel) OnSendMessage(conn interface{}, msg interface{}) error {
+func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
 		return nil

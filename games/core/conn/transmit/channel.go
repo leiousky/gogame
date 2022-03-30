@@ -9,8 +9,10 @@ import (
 /// IChannel 消息传输接口
 /// <summary>
 type IChannel interface {
-	OnRecvMessage(conn interface{}) (msg interface{}, err error)
-	OnSendMessage(conn interface{}, msg interface{}) error
+	/// 接收数据
+	OnRecv(conn interface{}) (msg interface{}, err error)
+	/// 发送数据
+	OnSend(conn interface{}, msg interface{}) error
 }
 
 func IsEOFOrReadError(err error) bool {
