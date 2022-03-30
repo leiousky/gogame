@@ -87,6 +87,9 @@ func (s *connector) Write(msg interface{}) {
 }
 
 func (s *connector) connectTCP(name, address string) int {
+	if s.onProtocol == nil {
+		panic(fmt.Sprintf("connectTCP s.onProtocol == nil"))
+	}
 	c, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
 		fmt.Println(err)
@@ -107,6 +110,9 @@ func (s *connector) connectTCP(name, address string) int {
 }
 
 func (s *connector) connectWS(name, address string) int {
+	if s.onProtocol == nil {
+		panic(fmt.Sprintf("connectWS s.onProtocol == nil"))
+	}
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")
 	if len(vec) != 2 {
