@@ -1,7 +1,7 @@
 package iface
 
 import (
-	"games/core"
+	"games/core/slot"
 	"games/public/define"
 )
 
@@ -18,7 +18,7 @@ type IDesk interface {
 	/// 机器人入桌检查
 	CheckRobotEnter() int
 	/// 返回桌子油槽
-	GetSlot() core.ISlot
+	GetSlot() slot.ISlot
 	/// 返回桌子ID
 	GetDeskID() uint16
 	/// 返回桌子信息

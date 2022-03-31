@@ -1,4 +1,4 @@
-package core
+package cell
 
 import (
 	"fmt"
@@ -84,9 +84,8 @@ const (
 	Tmsq int = int(1)
 )
 
-/// 创建单元业务处理器
-/// newProc()执行必须在Run()的go协程中调用，不然tid获取不对
-func newProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
+/// NewProc()执行必须在Run()的go协程中调用，不然tid获取不对
+func NewProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
 	ticker := func(d time.Duration) *time.Ticker {
 		if d <= 0 {
 			return nil

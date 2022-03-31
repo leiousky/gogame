@@ -18,11 +18,11 @@ Golang实现异步游戏框架（多核高并发），强伸缩，可扩展 ，�
 │  │
 │  │                           业务层
 │  │
-│  │  events.go                业务事件(网络读写/自定义)
-│  │  mailbox.go               邮槽管理(容器)
-│  │  proc.go                  单元(cell)业务处理器(EventLoop)
-│  │  slot.go                  业务邮槽(Proc启动器，EventLoopThread)
-│  │  worker.go                业务接口
+│  │  mailbox.go               邮槽管理器(Slot容器)
+│  │  slot.go                  单元业务邮槽(Proc启动器，EventLoopThread)
+│  │  events.go                单元业务事件(网络读写/自定义)
+│  │  proc.go                  单元业务处理器(EventLoop)
+│  │  worker.go                单元业务接口
 │  │        
 │  ├─conn                      网络层
 │  │  │  

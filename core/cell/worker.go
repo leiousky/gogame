@@ -1,4 +1,4 @@
-package core
+package cell
 
 import (
 	"games/core/conn"

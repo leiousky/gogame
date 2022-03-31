@@ -2,7 +2,7 @@ package impl
 
 import (
 	"fmt"
-	"games/core"
+	"games/core/slot"
 	"games/public/define"
 	"games/public/iface"
 	"math/rand"
@@ -23,7 +23,7 @@ type CDesk struct {
 	players  []iface.IPlayer     //桌子玩家players[chairID]
 	delegate iface.IDeskDelegate //子游戏桌子代理，子游戏桌子逻辑继承
 	freeIDs  []uint16            //空闲桌子ID
-	slot     core.ISlot          //桌子逻辑协程，内含协程安全定时器
+	slot     slot.ISlot          //桌子逻辑协程，内含协程安全定时器
 	//real, robot uint32         //百人场优化人数获取，真实玩家/机器人玩家数
 	lock  *sync.RWMutex
 	stock define.StorageInfo
@@ -53,7 +53,7 @@ func (s *CDesk) SetDelegate(delegate iface.IDeskDelegate) {
 }
 
 /// 桌子初始化
-func (s *CDesk) Init(gameInfo *define.GameInfo, roomInfo *define.RoomInfo, slot core.ISlot) {
+func (s *CDesk) Init(gameInfo *define.GameInfo, roomInfo *define.RoomInfo, slot slot.ISlot) {
 	if gameInfo == nil || roomInfo == nil || slot == nil {
 		return
 	}
@@ -108,7 +108,7 @@ func (s *CDesk) CheckRobotEnter() int {
 }
 
 /// 返回桌子油槽
-func (s *CDesk) GetSlot() core.ISlot {
+func (s *CDesk) GetSlot() slot.ISlot {
 	return s.slot
 }
 

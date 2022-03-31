@@ -1,16 +1,16 @@
 package service
 
 import (
-	"games/core"
+	"games/core/cell"
 	"games/core/conn"
 )
 
 type Sentry struct {
-	c    core.IProc
+	c    cell.IProc
 	main *sMain
 }
 
-func newEntry(c core.IProc) core.IWorker {
+func newEntry(c cell.IProc) cell.IWorker {
 	p := &Sentry{c: c}
 	p.main = newMain(p)
 	return p
@@ -45,13 +45,13 @@ func (s *Sentry) OnTimer(timerID uint32, dt int32, args interface{}) bool {
 }
 
 type SentryCreator struct {
-	core.IWorkerCreator
+	cell.IWorkerCreator
 }
 
-func (s *SentryCreator) Create(c core.IProc) core.IWorker {
+func (s *SentryCreator) Create(c cell.IProc) cell.IWorker {
 	return newEntry(c)
 }
 
-func NewSentryCreator() core.IWorkerCreator {
+func NewSentryCreator() cell.IWorkerCreator {
 	return &SentryCreator{}
 }
