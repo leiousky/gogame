@@ -14,48 +14,39 @@ type Timestamp interface {
 	SinceUnixEpoch() int64
 }
 
-//
 type timeStamp struct {
 	val int64 // second/millisecond/microsecond/nanosecond
 }
 
-//
 func NewTimestamp(val int64) Timestamp {
 	return &timeStamp{val: val}
 }
 
-//
 func (s *timeStamp) Valid() bool {
 	return s.val > int64(0)
 }
 
-//
 func (s *timeStamp) Add(sec int32) Timestamp {
 	s.val = s.val + int64(sec)
 	return s
 }
 
-//
 func (s *timeStamp) Less(t Timestamp) bool {
 	return s.val < t.SinceUnixEpoch()
 }
 
-//
 func (s *timeStamp) Equal(t Timestamp) bool {
 	return s.val == t.SinceUnixEpoch()
 }
 
-//
 func (s *timeStamp) Greater(t Timestamp) bool {
 	return s.val > t.SinceUnixEpoch()
 }
 
-//
 func (s *timeStamp) SinceUnixEpoch() int64 {
 	return s.val
 }
 
-//
 func TimeAdd(t Timestamp, val int32) Timestamp {
 	return NewTimestamp(t.SinceUnixEpoch() + int64(val))
 }
