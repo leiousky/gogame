@@ -1,7 +1,7 @@
 package tcp
 
 import (
-	"fmt"
+	"errors"
 	cb "games/core/callback"
 	"log"
 	"net"
@@ -51,13 +51,13 @@ func (s *acceptor) ListenTCP(address string) {
 
 func (s *acceptor) listenTCP(address string) int {
 	if s.onProtocol == nil {
-		panic(fmt.Sprintf("listenTCP s.onProtocol == nil"))
+		panic(errors.New("acceptor.listenTCP s.onProtocol == nil"))
 	}
 	if s.onCondition == nil {
-		panic(fmt.Sprintf("listenTCP s.onCondition == nil"))
+		panic(errors.New("acceptor.listenTCP s.onCondition == nil"))
 	}
 	if s.onNewConnection == nil {
-		panic(fmt.Sprintf("listenTCP s.onNewConnection == nil"))
+		panic(errors.New("acceptor.listenTCP s.onNewConnection == nil"))
 	}
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -71,6 +71,15 @@ func (s *acceptor) listenTCP(address string) int {
 }
 
 func (s *acceptor) listenWS(address string) int {
+	if s.onProtocol == nil {
+		panic(errors.New("acceptor.listenWS s.onProtocol == nil"))
+	}
+	if s.onCondition == nil {
+		panic(errors.New("acceptor.listenWS s.onCondition == nil"))
+	}
+	if s.onNewConnection == nil {
+		panic(errors.New("acceptor.listenWS s.onNewConnection == nil"))
+	}
 	return 0
 }
 

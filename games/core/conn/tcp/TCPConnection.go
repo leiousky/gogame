@@ -1,7 +1,7 @@
 package tcp
 
 import (
-	"fmt"
+	"errors"
 	"games/comm/utils"
 	cb "games/core/callback"
 	"games/core/conn"
@@ -67,7 +67,7 @@ func (s *TCPConnection) Connected() bool {
 
 func (s *TCPConnection) LocalAddr() string {
 	if s.conn == nil {
-		panic(fmt.Sprintf("s.conn == nil"))
+		panic(errors.New("s.conn == nil"))
 	}
 	if c, ok := s.conn.(net.Conn); ok {
 		return c.LocalAddr().String()
@@ -79,7 +79,7 @@ func (s *TCPConnection) LocalAddr() string {
 
 func (s *TCPConnection) RemoteAddr() string {
 	if s.conn == nil {
-		panic(fmt.Sprintf("s.conn == nil"))
+		panic(errors.New("s.conn == nil"))
 	}
 	if c, ok := s.conn.(net.Conn); ok {
 		return c.RemoteAddr().String()
@@ -160,7 +160,7 @@ func (s *TCPConnection) ConnectEstablished() {
 
 func (s *TCPConnection) ConnectDestroyed() {
 	if s.id == 0 {
-		panic("connID == 0")
+		panic(errors.New("connID == 0"))
 	}
 	s.setState(conn.KDisconnected)
 	if s.onConnection != nil {

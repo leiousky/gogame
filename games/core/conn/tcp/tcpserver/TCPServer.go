@@ -1,6 +1,7 @@
 package tcpserver
 
 import (
+	"errors"
 	"fmt"
 	"games/comm/utils"
 	cb "games/core/callback"
@@ -58,14 +59,14 @@ func NewTCPServer() ITCPServer {
 
 func (s *TCPServer) SetProtocolCallback(cb cb.OnProtocol) {
 	if s.acceptor == nil {
-		panic(fmt.Sprintf("TCPServer SetProtocolCallback s.acceptor == nil"))
+		panic(errors.New("TCPServer SetProtocolCallback s.acceptor == nil"))
 	}
 	s.acceptor.SetProtocolCallback(cb)
 }
 
 func (s *TCPServer) SetConditionCallback(cb cb.OnCondition) {
 	if s.acceptor == nil {
-		panic(fmt.Sprintf("TCPServer SetConditionCallback s.acceptor == nil"))
+		panic(errors.New("TCPServer SetConditionCallback s.acceptor == nil"))
 	}
 	s.acceptor.SetConditionCallback(cb)
 }
@@ -115,7 +116,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 			conn.KServer,
 			channel)
 	} else {
-		panic(fmt.Sprintf("newConnection conn error"))
+		panic(errors.New("newConnection conn error"))
 	}
 	s.peer.(*tcp.TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*tcp.TCPConnection).SetMessageCallback(s.onMessage)
@@ -135,7 +136,7 @@ func (s *TCPServer) onProtocol(proto string) transmit.IChannel {
 	case "ws":
 		return ws_channel.NewChannel()
 	}
-	panic(fmt.Sprintf("no proto setup"))
+	panic(errors.New("no proto setup"))
 }
 
 func (s *TCPServer) OnConnection(peer conn.Session) {

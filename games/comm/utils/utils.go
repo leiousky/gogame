@@ -44,7 +44,8 @@ func printStack(err interface{}) {
 	b := make([]byte, 4096)
 	n := runtime.Stack(b, false)
 	log.Println(string(b[:n]))
-	log.Fatalln(debug.Stack())
+	//log.Fatalln(debug.Stack())
+	panic(debug.Stack())
 }
 
 /// 获取协程ID

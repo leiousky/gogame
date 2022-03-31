@@ -1,7 +1,7 @@
 package tcp
 
 import (
-	"fmt"
+	"errors"
 	cb "games/core/callback"
 	"log"
 	"net"
@@ -46,10 +46,10 @@ func (s *connector) SetNewConnectionCallback(cb cb.OnNewConnection) {
 
 func (s *connector) connectTCP(address string) int {
 	if s.onProtocol == nil {
-		panic(fmt.Sprintf("connectTCP s.onProtocol == nil"))
+		panic(errors.New("connector.connectTCP s.onProtocol == nil"))
 	}
 	if s.onNewConnection == nil {
-		panic(fmt.Sprintf("connectTCP s.onNewConnection == nil"))
+		panic(errors.New("connector.connectTCP s.onNewConnection == nil"))
 	}
 	c, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err != nil {
@@ -63,10 +63,10 @@ func (s *connector) connectTCP(address string) int {
 
 func (s *connector) connectWS(address string) int {
 	if s.onProtocol == nil {
-		panic(fmt.Sprintf("connectWS s.onProtocol == nil"))
+		panic(errors.New("connector.connectWS s.onProtocol == nil"))
 	}
 	if s.onNewConnection == nil {
-		panic(fmt.Sprintf("connectWS s.onNewConnection == nil"))
+		panic(errors.New("connector.connectWS s.onNewConnection == nil"))
 	}
 	//ws://ip:port wss://ip:port
 	vec := strings.Split(address, "//")

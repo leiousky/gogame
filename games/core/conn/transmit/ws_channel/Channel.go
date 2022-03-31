@@ -1,6 +1,7 @@
 package ws_channel
 
 import (
+	"errors"
 	"games/comm/utils"
 	"games/core/conn/transmit"
 
@@ -20,7 +21,7 @@ func NewChannel() transmit.IChannel {
 func (s *Channel) OnRecv(conn interface{}) (interface{}, error) {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
-		return nil, nil
+		panic(errors.New("ws_channel.OnRecv conn == nil"))
 	}
 	c.SetReadLimit(512)
 	msgType, buf, err := c.ReadMessage()
@@ -37,7 +38,7 @@ func (s *Channel) OnRecv(conn interface{}) (interface{}, error) {
 func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
-		return nil
+		panic(errors.New("ws_channel.OnSend conn == nil"))
 	}
 	buf, _ := utils.ToBytes(msg)
 	return c.WriteMessage(websocket.BinaryMessage, buf)

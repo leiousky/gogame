@@ -1,6 +1,7 @@
 package tcpclient
 
 import (
+	"errors"
 	"fmt"
 	"games/comm/utils"
 	cb "games/core/callback"
@@ -70,7 +71,7 @@ func (s *TCPClient) Write(msg interface{}) {
 
 func (s *TCPClient) SetProtocolCallback(cb cb.OnProtocol) {
 	if s.c == nil {
-		panic(fmt.Sprintf("TCPClient SetProtocolCallback s.c == nil"))
+		panic(errors.New("TCPClient SetProtocolCallback s.c == nil"))
 	}
 	s.c.SetProtocolCallback(cb)
 }
@@ -108,7 +109,7 @@ func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
 			conn.KClient,
 			channel)
 	} else {
-		panic(fmt.Sprintf("newConnection conn error"))
+		panic(errors.New("newConnection conn error"))
 	}
 	s.peer.(*tcp.TCPConnection).SetConnectionCallback(s.onConnection)
 	s.peer.(*tcp.TCPConnection).SetMessageCallback(s.onMessage)
@@ -128,7 +129,7 @@ func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
 	case "ws":
 		return ws_channel.NewChannel()
 	}
-	panic(fmt.Sprintf("no proto setup"))
+	panic(errors.New("no proto setup"))
 }
 
 func (s *TCPClient) ConnectTCP(address string) {
