@@ -16,7 +16,7 @@ import (
 )
 
 /// <summary>
-/// IProc 消息处理器接口
+/// IProc 单元业务处理器接口
 /// <summary>
 type IProc interface {
 	/// 协程ID
@@ -57,7 +57,7 @@ type IProc interface {
 }
 
 /// <summary>
-/// Proc 消息处理器
+/// Proc 单元业务处理器实现
 /// <summary>
 type Proc struct {
 	msQ        chan interface{}
@@ -84,9 +84,9 @@ const (
 	Tmsq int = int(1)
 )
 
-/// 创建消息处理器
-/// newMsgProc()执行必须在Run()的go协程中调用，不然tid获取不对
-func newMsgProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
+/// 创建单元业务处理器
+/// newProc()执行必须在Run()的go协程中调用，不然tid获取不对
+func newProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
 	ticker := func(d time.Duration) *time.Ticker {
 		if d <= 0 {
 			return nil

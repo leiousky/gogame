@@ -7,7 +7,7 @@ import (
 )
 
 /// <summary>
-/// ISlot 消息处理单元接口
+/// ISlot 业务邮槽接口(Proc启动器)
 /// <summary>
 type ISlot interface {
 	/// 滴答时钟间隔
@@ -16,9 +16,9 @@ type ISlot interface {
 	Reset(d time.Duration)
 	/// 添加worker初始化参数
 	Add(args ...interface{})
-	/// 启动协程并返回消息处理器句柄
+	/// 启动协程并返回Proc句柄
 	Sched() IProc
-	/// 获取消息处理器句柄
+	/// 获取Proc句柄
 	GetProc() IProc
 	/// 退出处理
 	Stop()
@@ -30,10 +30,10 @@ const (
 )
 
 /// <summary>
-/// Slot 消息处理单元
+/// Slot 业务邮槽实现(Proc启动器)
 /// <summary>
 type Slot struct {
-	proc    IProc //消息处理器
+	proc    IProc
 	args    []interface{}
 	lock    *sync.Mutex
 	cond    *sync.Cond
@@ -43,7 +43,7 @@ type Slot struct {
 	sta     int32
 }
 
-/// 创建消息处理单元
+/// 创建业务邮槽
 func NewMsgSlot(d time.Duration, size int, creator IWorkerCreator) ISlot {
 	s := &Slot{d: d, size: size, creator: creator, lock: &sync.Mutex{}}
 	s.cond = sync.NewCond(s.lock)
@@ -65,7 +65,7 @@ func (s *Slot) Add(args ...interface{}) {
 	s.args = append(s.args, args...)
 }
 
-/// 启动协程并返回消息处理器句柄
+/// 启动协程并返回Proc句柄
 func (s *Slot) Sched() IProc {
 	if atomic.CompareAndSwapInt32(&s.sta, Idle, Running) {
 		go s.run()
@@ -80,14 +80,14 @@ func (s *Slot) Sched() IProc {
 	return s.proc
 }
 
-/// 获取消息处理器句柄
+/// 获取Proc句柄
 func (s *Slot) GetProc() IProc {
 	return s.proc
 }
 
 /// 执行协程处理任务
 func (s *Slot) run() {
-	proc := newMsgProc(s.d, s.size, s.creator, s.args...)
+	proc := newProc(s.d, s.size, s.creator, s.args...)
 	s.lock.Lock()
 	s.proc = proc
 	s.cond.Signal()
