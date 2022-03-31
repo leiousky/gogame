@@ -45,8 +45,9 @@ type TCPServer struct {
 	onWriteComplete cb.OnWriteComplete
 }
 
-func NewTCPServer() ITCPServer {
+func NewTCPServer(name string) ITCPServer {
 	s := &TCPServer{
+		name:     name,
 		acceptor: tcp.NewAcceptor()}
 	s.acceptor.SetProtocolCallback(s.onProtocol)
 	s.acceptor.SetNewConnectionCallback(s.newConnection)
@@ -102,7 +103,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("-%v|%v#%v", localAddr, peerAddr, connID),
+			s.name+fmt.Sprintf("_%v|%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KServer,
 			channel)
@@ -111,7 +112,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("-%v|%v#%v", localAddr, peerAddr, connID),
+			s.name+fmt.Sprintf("_%v|%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KServer,
 			channel)

@@ -48,9 +48,10 @@ type TCPClient struct {
 	onWriteComplete cb.OnWriteComplete
 }
 
-func NewTCPClient() ITCPClient {
+func NewTCPClient(name string) ITCPClient {
 	s := &TCPClient{
-		c: tcp.NewConnector()}
+		name: name,
+		c:    tcp.NewConnector()}
 	s.c.SetProtocolCallback(s.onProtocol)
 	s.c.SetNewConnectionCallback(s.newConnection)
 	s.SetConnectionCallback(s.OnConnection)
@@ -95,7 +96,7 @@ func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("-%v#%v", peerAddr, connID),
+			s.name+fmt.Sprintf("_%v#%v", peerAddr, connID),
 			c,
 			conn.KClient,
 			channel)
@@ -104,7 +105,7 @@ func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("-%v#%v", peerAddr, connID),
+			s.name+fmt.Sprintf("_%v#%v", peerAddr, connID),
 			c,
 			conn.KClient,
 			channel)

@@ -196,9 +196,9 @@ func (s *TCPConnection) readLoop() {
 	}
 	//等待写退出
 	s.Wg.Wait()
-	if s.closeCallback != nil {
-		s.closeCallback(s)
-	}
+	//if s.closeCallback != nil {
+	//	s.closeCallback(s)
+	//}
 	s.conn = nil
 }
 
@@ -226,6 +226,9 @@ func (s *TCPConnection) writeLoop() {
 			break
 		}
 	}
+	if s.closeCallback != nil {
+		s.closeCallback(s)
+	}
 	//唤醒阻塞读
 	s.close()
 	s.Wg.Done()
@@ -243,10 +246,17 @@ func (s *TCPConnection) Close() {
 	}
 }
 
+/// 关闭执行流程
+/// TCPConnection.closeCallback ->
+/// TCPServer.removeConnection ->
+/// Sessions.Remove() ->
+/// TCPConnection.ConnectDestroyed ->
+/// TCPConnection.close
 func (s *TCPConnection) close() {
 	if s.conn == nil {
 		return
 	}
+	//log.Printf("TCPConnection.closefd id=%v name=%v", s.id, s.name)
 	if c, ok := s.conn.(net.Conn); ok {
 		c.Close()
 	} else if c, ok := s.conn.(*websocket.Conn); ok {

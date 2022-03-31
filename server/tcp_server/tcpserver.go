@@ -16,16 +16,16 @@ import (
 /// <summary>
 type TCPServer struct {
 	tcpserver.ITCPServer
-	c tcpserver.TCPServer
+	c tcpserver.ITCPServer
 }
 
-func NewTCPServer() tcpserver.ITCPServer {
-	s := &TCPServer{}
-	s.c.SetProtocolCallback(s.onProtocol)
-	s.c.SetConditionCallback(s.OnCondition)
-	s.c.SetConnectionCallback(s.OnConnection)
-	s.c.SetMessageCallback(s.OnMessage)
-	s.c.SetWriteCompleteCallback(s.OnWriteComplete)
+func NewTCPServer(name string) tcpserver.ITCPServer {
+	s := &TCPServer{c: tcpserver.NewTCPServer(name)}
+	s.c.(*tcpserver.TCPServer).SetProtocolCallback(s.onProtocol)
+	s.c.(*tcpserver.TCPServer).SetConditionCallback(s.OnCondition)
+	s.c.(*tcpserver.TCPServer).SetConnectionCallback(s.OnConnection)
+	s.c.(*tcpserver.TCPServer).SetMessageCallback(s.OnMessage)
+	s.c.(*tcpserver.TCPServer).SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
 }
 

@@ -16,15 +16,15 @@ import (
 /// <summary>
 type TCPClient struct {
 	tcpclient.ITCPClient
-	c tcpclient.TCPClient
+	c tcpclient.ITCPClient
 }
 
-func NewTCPClient() tcpclient.ITCPClient {
-	s := &TCPClient{}
-	s.c.SetProtocolCallback(s.onProtocol)
-	s.c.SetConnectionCallback(s.OnConnection)
-	s.c.SetMessageCallback(s.OnMessage)
-	s.c.SetWriteCompleteCallback(s.OnWriteComplete)
+func NewTCPClient(name string) tcpclient.ITCPClient {
+	s := &TCPClient{c: tcpclient.NewTCPClient(name)}
+	s.c.(*tcpclient.TCPClient).SetProtocolCallback(s.onProtocol)
+	s.c.(*tcpclient.TCPClient).SetConnectionCallback(s.OnConnection)
+	s.c.(*tcpclient.TCPClient).SetMessageCallback(s.OnMessage)
+	s.c.(*tcpclient.TCPClient).SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"games/core"
+	"games/core/conn/tcp/tcpclient"
 	"games/public/define"
 	"games/public/iface/impl"
 	"games/service"
@@ -15,7 +16,9 @@ func main() {
 
 	//tcpclient := tcp_client.NewTCPClient()
 	//tcpclient.ConnectTCP("127.0.0.1:8099")
-	//return
+	tcpclient := tcpclient.NewTCPClient("client")
+	tcpclient.ConnectTCP("127.0.0.1:8099")
+
 	var GameInfo define.GameInfo //游戏类型
 	var RoomInfo define.RoomInfo //游戏房间
 	var mailbox core.IMailbox

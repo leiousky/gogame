@@ -36,6 +36,7 @@ func (s *Sessions) Add(peer Session) bool {
 	ok := false
 	s.l.Lock()
 	if !s.stop {
+		//log.Printf("Sessions.Add id=%v name=%v", peer.ID(), peer.Name())
 		s.peers[peer.ID()] = peer
 		ok = true
 	}
@@ -46,6 +47,7 @@ func (s *Sessions) Add(peer Session) bool {
 func (s *Sessions) Remove(peer Session) {
 	s.l.Lock()
 	if _, ok := s.peers[peer.ID()]; ok {
+		//log.Printf("Sessions.Remove id=%v name=%v", peer.ID(), peer.Name())
 		delete(s.peers, peer.ID())
 	}
 	if s.stop && len(s.peers) == 0 {
