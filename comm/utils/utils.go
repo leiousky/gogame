@@ -274,12 +274,10 @@ func substr(s string, pos, length int32) string {
 	return string(runes[pos:l])
 }
 
-//
 func GetParentDirectory(dirctory string) string {
 	return substr(dirctory, 0, int32(strings.LastIndex(dirctory, "/")))
 }
 
-//
 func GetCurrentDirectory() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
