@@ -313,12 +313,13 @@ EXIT:
 			runtime.Gosched()
 		}
 		i++
-		//log.Println("run_msQ ...")
+		log.Println("Proc.run_msQ ...")
 		select {
 		//定时任务
 		case _, ok := <-s.trigger:
 			{
 				if ok {
+					log.Println("Proc.run_msQ timer.Poll ...")
 					timer.Poll(s.tid, worker.OnTimer)
 				}
 				break
@@ -365,7 +366,7 @@ EXIT:
 		case _, ok := <-s.idle:
 			{
 				if ok {
-					log.Println("doFunctors...")
+					log.Println("Proc.run_msQ doFunctors...")
 					utils.SafeCall(
 						func() {
 							s.doFunctors()
