@@ -103,7 +103,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 			connID,
 			s.name+fmt.Sprintf("-%v|%v#%v", localAddr, peerAddr, connID),
 			c,
-			conn.KClient,
+			conn.KServer,
 			channel)
 	} else if p, ok := c.(*websocket.Conn); ok {
 		localAddr := p.LocalAddr().String()
@@ -112,7 +112,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 			connID,
 			s.name+fmt.Sprintf("-%v|%v#%v", localAddr, peerAddr, connID),
 			c,
-			conn.KClient,
+			conn.KServer,
 			channel)
 	} else {
 		panic(fmt.Sprintf("newConnection conn error"))
