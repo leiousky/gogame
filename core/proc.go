@@ -336,7 +336,7 @@ EXIT:
 			{
 				if ok {
 					if msg == nil {
-						//panic(fmt.Sprintf("msg nil"))
+						//panic(errors.New("msg nil"))
 						break EXIT
 					} else if _, ok := msg.(*Event); ok {
 						start := time.Now()
@@ -348,10 +348,10 @@ EXIT:
 				} else {
 					//channel closed
 					if msg == nil {
-						//panic(fmt.Sprintf("channel closed, msg nil"))
+						//panic(errors.New("channel closed, msg nil"))
 						break EXIT
 					} else if _, ok := msg.(*Event); ok {
-						//panic(fmt.Sprintf("channel closed, msg exist"))
+						//panic(errors.New("channel closed, msg exist"))
 						start := time.Now()
 						s.proc(msg.(*Event), worker)
 						elapsed := time.Since(start)
