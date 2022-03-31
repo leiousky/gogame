@@ -6,8 +6,10 @@ import (
 	"games/core/conn/transmit"
 )
 
+/// 流协议解析
 type OnProtocol func(proto string) transmit.IChannel
 
+/// 接受连接检查
 type OnCondition func(conn interface{}) bool
 
 type OnNewConnection func(conn interface{}, channel transmit.IChannel)
