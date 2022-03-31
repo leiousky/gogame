@@ -21,6 +21,8 @@ import (
 type IProc interface {
 	/// 协程ID
 	GetPID() uint32
+	/// 修改时钟间隔
+	Reset(d time.Duration)
 	/// 内置局部定时器，线程安全
 	GetTimer() interface{}
 	GetTimerv2() interface{}
@@ -118,6 +120,11 @@ func newMsgProc(d time.Duration, size int, creator IWorkerCreator, args ...inter
 /// 协程ID
 func (s *Proc) GetPID() uint32 {
 	return s.tid
+}
+
+/// 修改时钟间隔
+func (s *Proc) Reset(d time.Duration) {
+	s.ticker.Reset(d)
 }
 
 /// 获取线程内置局部定时器，肯定线程安全

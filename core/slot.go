@@ -10,8 +10,10 @@ import (
 /// ISlot 消息处理单元接口
 /// <summary>
 type ISlot interface {
-	/// 定时器间隔时间
+	/// 滴答时钟间隔
 	Duration() time.Duration
+	/// 修改时钟间隔
+	Reset(d time.Duration)
 	/// 添加worker初始化参数
 	Add(args ...interface{})
 	/// 启动协程并返回消息处理器句柄
@@ -48,9 +50,14 @@ func NewMsgSlot(d time.Duration, size int, creator IWorkerCreator) ISlot {
 	return s
 }
 
-/// 定时器间隔时间
+/// 滴答时钟间隔
 func (s *Slot) Duration() time.Duration {
 	return s.d
+}
+
+/// 修改时钟间隔
+func (s *Slot) Reset(d time.Duration) {
+	s.proc.Reset(d)
 }
 
 /// 添加worker初始化参数
