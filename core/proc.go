@@ -171,7 +171,12 @@ func (s *Proc) push(data interface{}) {
 	s.l.Lock()
 	if data == nil {
 		if !s.closed {
-			s.msQ <- data
+			select {
+			case s.msQ <- data:
+				break
+			default:
+				break
+			}
 			close(s.msQ)
 			s.closed = true
 		} else {
@@ -181,6 +186,9 @@ func (s *Proc) push(data interface{}) {
 		if !s.closed {
 			select {
 			case s.msQ <- data:
+				break
+			default:
+				break
 			}
 		} else {
 			panic(fmt.Sprintf("pid[%v]msQ is closed", s.tid))
@@ -262,7 +270,13 @@ func (s *Proc) Append(cb func()) {
 func (s *Proc) signal() {
 	switch s.selectQ {
 	case TmsQ:
-		s.idle <- true
+		select {
+		case s.idle <- true:
+			break
+		default:
+			//默认case防止连续调用多次Append()时阻塞
+			break
+		}
 		break
 	case Tmsq:
 		s.msq.Signal()
@@ -313,14 +327,15 @@ EXIT:
 			runtime.Gosched()
 		}
 		i++
-		log.Println("Proc.run_msQ ...")
+		//log.Println("Proc.run_msQ ...")
 		select {
 		//定时任务
 		case _, ok := <-s.trigger:
 			{
 				if ok {
-					log.Println("Proc.run_msQ timer.Poll ...")
+					//log.Println("Proc.run_msQ timer.Poll ...")
 					timer.Poll(s.tid, worker.OnTimer)
+					//s.test001()
 				}
 				break
 			}
@@ -366,7 +381,7 @@ EXIT:
 		case _, ok := <-s.idle:
 			{
 				if ok {
-					log.Println("Proc.run_msQ doFunctors...")
+					//log.Println("Proc.run_msQ doFunctors...")
 					utils.SafeCall(
 						func() {
 							s.doFunctors()
@@ -374,8 +389,9 @@ EXIT:
 				}
 				break
 			}
-			//导致CPU负载非常高，应该禁用
+			//轮询时默认case会导致CPU负载非常高，应该禁用
 			//default:
+			//	break
 		}
 	}
 	s.cleanup()
@@ -497,4 +513,37 @@ func (s *Proc) Quit() {
 		s.msq.Push(nil)
 		break
 	}
+}
+
+func (s *Proc) test001() {
+	s.Append(func() {
+		log.Printf("hello,func 1...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 2...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 3...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 4...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 5...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 6...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 7...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 8...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 9...")
+	})
+	s.Append(func() {
+		log.Printf("hello,func 10...")
+	})
 }
