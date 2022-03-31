@@ -58,22 +58,23 @@ type IProc interface {
 /// Proc 消息处理器
 /// <summary>
 type Proc struct {
-	msQ          chan interface{}
-	l            *sync.Mutex
-	idle         chan bool
-	closed       bool
-	tid          uint32            //协程ID
-	msq          msq.MsgQueue      //任务队列
-	worker       IWorker           //任务处理
-	timer        timer.ScopedTimer //内置局部定时器，线程安全
-	timerTrigger <-chan time.Time  //定时触发器
-	timerWheel   timer.TimerWheel  //时间轮盘
-	dispatcher   IProc             //分派任务到其他IProc
-	args         []interface{}     //任务参数
-	funcs        []func()          //空闲回调
-	lock         *sync.RWMutex
-	timerv2      *timerv2.SafeTimerScheduel //协程安全定时器
-	selectQ      int
+	msQ        chan interface{}
+	l          *sync.Mutex
+	idle       chan bool
+	closed     bool
+	tid        uint32            //协程ID
+	msq        msq.MsgQueue      //任务队列
+	worker     IWorker           //任务处理
+	ticker     *time.Ticker      //滴答时钟
+	trigger    <-chan time.Time  //定时触发器
+	timer      timer.ScopedTimer //内置局部定时器，线程安全
+	timerWheel timer.TimerWheel  //时间轮盘
+	dispatcher IProc             //分派任务到其他IProc
+	args       []interface{}     //任务参数
+	funcs      []func()          //空闲回调
+	lock       *sync.RWMutex
+	timerv2    *timerv2.SafeTimerScheduel //协程安全定时器
+	selectQ    int
 }
 
 const (
@@ -84,16 +85,29 @@ const (
 /// 创建消息处理器
 /// newMsgProc()执行必须在Run()的go协程中调用，不然tid获取不对
 func newMsgProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
+	ticker := func(d time.Duration) *time.Ticker {
+		if d <= 0 {
+			return nil
+		}
+		return time.NewTicker(d)
+	}(d)
+	trigger := func(ticker *time.Ticker, d time.Duration) <-chan time.Time {
+		if d <= 0 {
+			return nil
+		}
+		return ticker.C
+	}(ticker, d)
 	s := &Proc{
-		msQ:          make(chan interface{}, 1000),
-		l:            &sync.Mutex{},
-		idle:         make(chan bool, 10),
-		timerTrigger: time.After(d),
-		tid:          utils.GoroutineID(),
-		msq:          msq.NewFreeVecMsq(),
-		lock:         &sync.RWMutex{},
-		timerv2:      timerv2.NewSafeTimerScheduel(),
-		selectQ:      TmsQ}
+		msQ:     make(chan interface{}, 1000),
+		l:       &sync.Mutex{},
+		idle:    make(chan bool, 1),
+		ticker:  ticker,
+		trigger: trigger,
+		tid:     utils.GoroutineID(),
+		msq:     msq.NewFreeVecMsq(),
+		lock:    &sync.RWMutex{},
+		timerv2: timerv2.NewSafeTimerScheduel(),
+		selectQ: TmsQ}
 	s.worker = creator.Create(s)                           //线程局部worker
 	s.timerWheel = timer.NewTimerWheel(s.tid, int32(size)) //指定时间轮大小
 	s.timer = timer.NewScopedTimer(s.tid)                  //线程局部定时器
@@ -152,7 +166,6 @@ func (s *Proc) push(data interface{}) {
 		if !s.closed {
 			s.msQ <- data
 			close(s.msQ)
-			close(s.idle)
 			s.closed = true
 		} else {
 			panic(fmt.Sprintf("pid[%v]msQ repeat close", s.tid))
@@ -293,10 +306,10 @@ EXIT:
 			runtime.Gosched()
 		}
 		i++
-		log.Println("run_msQ ...")
+		//log.Println("run_msQ ...")
 		select {
 		//定时任务
-		case _, ok := <-s.timerTrigger:
+		case _, ok := <-s.trigger:
 			{
 				if ok {
 					timer.Poll(s.tid, worker.OnTimer)
@@ -353,10 +366,18 @@ EXIT:
 				}
 				break
 			}
+			//导致CPU负载非常高
+			//default:
 		}
 	}
-	timer.RemoveTimers()
+	s.cleanup()
 	log.Printf("proc run_msQ tid=%v exit...", s.tid)
+}
+
+func (s *Proc) cleanup() {
+	s.timer.RemoveTimers()
+	close(s.idle)
+	s.ticker.Stop()
 }
 
 func (s *Proc) run_msq() {
