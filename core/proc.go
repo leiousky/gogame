@@ -373,7 +373,7 @@ EXIT:
 				}
 				break
 			}
-			//导致CPU负载非常高
+			//导致CPU负载非常高，应该禁用
 			//default:
 		}
 	}
