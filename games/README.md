@@ -41,15 +41,15 @@
 │  │  │  └─tcpserver           TCP服务端
 │  │  │          TCPServer.go
 │  │  │          
-│  │  └─transmit               传输接口(流解析)
-│  │      │  channel.go        TCP流读写抽象
+│  │  └─transmit               TCP流传输接口(读写解析)
+│  │      │  channel.go        TCP流协议读写
 │  │      │  
-│  │      ├─tcp_channel        TCP读写接口
-│  │      │      Channel.go    TCP流读写(默认)
+│  │      ├─tcp_channel        TCP协议读写接口
+│  │      │      Channel.go    TCP协议读写(默认)
 │  │      │      ReadWrite.go
 │  │      │      
-│  │      └─ws_channel         websocket读写接口
-│  │              Channel.go   websocket流读写(默认)
+│  │      └─ws_channel         websocket协议读写接口
+│  │              Channel.go   websocket协议读写(默认)
 │  │              ReadWrite.go
 │  │              
 │  ├─msq                       消息队列(待完善)
@@ -78,14 +78,14 @@
 │
 ├─server                      【业务层网络】
 │  │
-│  ├─stream                    流协议解析
-│  │  │  checksum.go
-│  │  │  msg.go
+│  ├─stream                    TCP流协议读写解析
+│  │  │  checksum.go           业务消息校验
+│  │  │  msg.go                业务消息定义
 │  │  │  
-│  │  ├─tcp_stream             TCP流协议读写解析
+│  │  ├─tcp_stream             TCP协议读写实现
 │  │  │      Channel.go
 │  │  │      
-│  │  └─ws_stream              websocket流协议读写解析
+│  │  └─ws_stream              websocket协议读写实现
 │  │          Channel.go
 │  │          
 │  ├─tcp_client                TCP客户端
