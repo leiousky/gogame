@@ -9,6 +9,7 @@ import (
 	"games/server/tcp_client"
 	"games/service"
 	"games/sub/game_dragon_tiger"
+	"time"
 )
 
 //go mod init games
@@ -50,7 +51,7 @@ func main() {
 	mailbox = core.NewMailBox()
 
 	//step.1.1 添加若干邮槽(桌子业务)
-	mailbox.Add(service.NewSentryCreator(), int(RoomInfo.DeskCount))
+	mailbox.Add(time.Millisecond*10000, 12, service.NewSentryCreator(), int(RoomInfo.DeskCount))
 
 	//step.1.2 桌子管理器创建n张桌子
 	impl.DeskMgr().Init(
@@ -66,10 +67,10 @@ func main() {
 	}
 
 	//step.2 添加若干邮槽(db/redis业务)
-	mailbox.Add(db.NewSentryCreator(), 12)
+	mailbox.Add(time.Millisecond*10000, 12, db.NewSentryCreator(), 12)
 
 	//step.3 启动邮槽协程处理
-	mailbox.Start(0)
+	mailbox.Start()
 
 	//如果开启机器人
 	if RoomInfo.EnableRobot {

@@ -4,6 +4,7 @@ import (
 	"games/comm/utils"
 	"os"
 	"os/signal"
+	"time"
 )
 
 /// <summary>
@@ -11,13 +12,13 @@ import (
 /// <summary>
 type IMailbox interface {
 	/// 添加若干邮槽
-	Add(creator IWorkerCreator, num int)
+	Add(d time.Duration, size int, creator IWorkerCreator, num int)
 	/// 添加一个邮槽
-	AddOne(creator IWorkerCreator) ISlot
+	AddOne(d time.Duration, size int, creator IWorkerCreator) ISlot
 	/// 遍历每个邮槽
 	Range(cb func(ISlot, int))
 	/// 启动所有邮槽协程处理
-	Start(size int)
+	Start()
 	/// 获取下一个邮槽
 	GetNextSlot() ISlot
 	/// 等待退出
@@ -42,16 +43,16 @@ func NewMailBox() IMailbox {
 }
 
 /// 添加若干邮槽
-func (s *Mailbox) Add(creator IWorkerCreator, num int) {
+func (s *Mailbox) Add(d time.Duration, size int, creator IWorkerCreator, num int) {
 	for i := 0; i < num; i++ {
-		slot := NewMsgSlot(creator)
+		slot := NewMsgSlot(d, size, creator)
 		s.slots = append(s.slots, slot)
 	}
 }
 
 /// 添加一个邮槽
-func (s *Mailbox) AddOne(creator IWorkerCreator) ISlot {
-	slot := NewMsgSlot(creator)
+func (s *Mailbox) AddOne(d time.Duration, size int, creator IWorkerCreator) ISlot {
+	slot := NewMsgSlot(d, size, creator)
 	s.slots = append(s.slots, slot)
 	return slot
 }
@@ -66,9 +67,9 @@ func (s *Mailbox) Range(cb func(ISlot, int)) {
 }
 
 /// 启动所有邮槽协程处理
-func (s *Mailbox) Start(size int) {
+func (s *Mailbox) Start() {
 	for _, slot := range s.slots {
-		slot.Sched(size)
+		slot.Sched()
 	}
 	if len(s.slots) > 0 {
 		s.ch = make(chan os.Signal)

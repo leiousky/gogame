@@ -3,16 +3,19 @@ package core
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 /// <summary>
 /// ISlot 消息处理单元接口
 /// <summary>
 type ISlot interface {
-	//添加worker初始化参数
+	/// 定时器间隔时间
+	Duration() time.Duration
+	/// 添加worker初始化参数
 	Add(args ...interface{})
 	/// 启动协程并返回消息处理器句柄
-	Sched(size int) IProc
+	Sched() IProc
 	/// 获取消息处理器句柄
 	GetProc() IProc
 	/// 退出处理
@@ -33,14 +36,21 @@ type Slot struct {
 	lock    *sync.Mutex
 	cond    *sync.Cond
 	creator IWorkerCreator
+	d       time.Duration
+	size    int
 	sta     int32
 }
 
 /// 创建消息处理单元
-func NewMsgSlot(creator IWorkerCreator) ISlot {
-	s := &Slot{creator: creator, lock: &sync.Mutex{}}
+func NewMsgSlot(d time.Duration, size int, creator IWorkerCreator) ISlot {
+	s := &Slot{d: d, size: size, creator: creator, lock: &sync.Mutex{}}
 	s.cond = sync.NewCond(s.lock)
 	return s
+}
+
+/// 定时器间隔时间
+func (s *Slot) Duration() time.Duration {
+	return s.d
 }
 
 /// 添加worker初始化参数
@@ -49,9 +59,9 @@ func (s *Slot) Add(args ...interface{}) {
 }
 
 /// 启动协程并返回消息处理器句柄
-func (s *Slot) Sched(size int) IProc {
+func (s *Slot) Sched() IProc {
 	if atomic.CompareAndSwapInt32(&s.sta, Idle, Running) {
-		go s.run(size)
+		go s.run()
 	}
 	{
 		s.lock.Lock()
@@ -69,8 +79,8 @@ func (s *Slot) GetProc() IProc {
 }
 
 /// 执行协程处理任务
-func (s *Slot) run(size int) {
-	proc := newMsgProc(s.creator, size, s.args...)
+func (s *Slot) run() {
+	proc := newMsgProc(s.d, s.size, s.creator, s.args...)
 	s.lock.Lock()
 	s.proc = proc
 	s.cond.Signal()
