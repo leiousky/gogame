@@ -1,7 +1,7 @@
 package tcp_client
 
 import (
-	"fmt"
+	"errors"
 	"games/comm/utils"
 	"games/core/conn"
 	"games/core/conn/tcp/tcpclient"
@@ -35,7 +35,7 @@ func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
 	case "ws":
 		return ws_stream.NewChannel()
 	}
-	panic(fmt.Sprintf("no proto setup"))
+	panic(errors.New("no proto setup"))
 }
 
 func (s *TCPClient) ConnectTCP(address string) {

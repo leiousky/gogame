@@ -1,7 +1,7 @@
 package tcp_server
 
 import (
-	"fmt"
+	"errors"
 	"games/comm/utils"
 	"games/core/conn"
 	"games/core/conn/tcp/tcpserver"
@@ -36,7 +36,7 @@ func (s *TCPServer) onProtocol(proto string) transmit.IChannel {
 	case "ws":
 		return ws_stream.NewChannel()
 	}
-	panic(fmt.Sprintf("no proto setup"))
+	panic(errors.New("no proto setup"))
 }
 
 func (s *TCPServer) ListenTCP(address string) {
