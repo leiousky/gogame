@@ -9,12 +9,12 @@ import (
 /// ISessions 连接会话容器
 /// <summary>
 type ISessions interface {
-	Add(peer Session) bool
-	Remove(peer Session)
 	Get(sesID int64) Session
 	Count() int
-	Stop()
+	Add(peer Session) bool
+	Remove(peer Session)
 	Wait()
+	Stop()
 }
 
 /// <summary>
@@ -31,30 +31,6 @@ func NewSessions() ISessions {
 	s := &Sessions{l: &sync.Mutex{}, peers: map[int64]Session{}}
 	s.c = sync.NewCond(s.l)
 	return s
-}
-
-func (s *Sessions) Add(peer Session) bool {
-	ok := false
-	s.l.Lock()
-	if !s.stop {
-		log.Printf("Sessions.Add => %v", peer.Name())
-		s.peers[peer.ID()] = peer
-		ok = true
-	}
-	s.l.Unlock()
-	return ok
-}
-
-func (s *Sessions) Remove(peer Session) {
-	s.l.Lock()
-	if _, ok := s.peers[peer.ID()]; ok {
-		log.Printf("Sessions.Remove => %v", peer.Name())
-		delete(s.peers, peer.ID())
-	}
-	if s.stop && len(s.peers) == 0 {
-		s.c.Signal()
-	}
-	s.l.Unlock()
 }
 
 func (s *Sessions) Get(sesID int64) Session {
@@ -75,18 +51,48 @@ func (s *Sessions) Count() int {
 	return c
 }
 
-func (s *Sessions) Stop() {
+func (s *Sessions) Add(peer Session) bool {
+	ok := false
 	s.l.Lock()
-	s.stop = true
+	if !s.stop {
+		log.Printf("Sessions.Add => %v", peer.Name())
+		s.peers[peer.ID()] = peer
+		ok = true
+	}
+	s.l.Unlock()
+	return ok
+}
+
+func (s *Sessions) Remove(peer Session) {
+	s.l.Lock()
+	if _, ok := s.peers[peer.ID()]; ok {
+		log.Printf("Sessions.Remove => %v", peer.Name())
+		delete(s.peers, peer.ID())
+	}
+	s.l.Unlock()
+}
+
+func (s *Sessions) removeAll(stop bool) {
+	s.l.Lock()
 	for _, peer := range s.peers {
 		peer.Close()
 	}
 	s.peers = map[int64]Session{}
+	if stop {
+		s.stop = true
+		s.c.Signal()
+	}
 	s.l.Unlock()
 }
 
 func (s *Sessions) Wait() {
 	s.l.Lock()
-	s.c.Wait()
+	for !s.stop {
+		s.c.Wait()
+	}
 	s.l.Unlock()
+}
+
+func (s *Sessions) Stop() {
+	s.removeAll(true)
 }
