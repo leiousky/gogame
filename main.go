@@ -2,9 +2,9 @@ package main
 
 import (
 	"games/core"
-	"games/core/conn/tcp/tcpclient"
 	"games/public/define"
 	"games/public/iface/impl"
+	"games/server/tcp_client"
 	"games/service"
 	"games/sub/game_dragon_tiger"
 	"time"
@@ -14,9 +14,7 @@ import (
 //go mod tidy
 func main() {
 
-	//tcpclient := tcp_client.NewTCPClient()
-	//tcpclient.ConnectTCP("127.0.0.1:8099")
-	tcpclient := tcpclient.NewTCPClient("client")
+	tcpclient := tcp_client.NewTCPClient("client")
 	tcpclient.ConnectTCP("127.0.0.1:8099")
 
 	var GameInfo define.GameInfo //游戏类型

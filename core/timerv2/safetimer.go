@@ -145,7 +145,7 @@ func (t *SafeTimerScheduel) CancelTimer(timerId uint32) {
 }
 
 func (t *SafeTimerScheduel) StartScheduelLoop() {
-	fmt.Printf("timer safe timer scheduelloop runing.")
+	//fmt.Printf("timer safe timer scheduelloop runing.")
 	for {
 		triggerList := t.hashwheel.GetTriggerWithIn(ERRORMAX)
 		//trigger

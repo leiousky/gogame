@@ -256,7 +256,7 @@ func (s *TCPConnection) close() {
 	if s.conn == nil {
 		return
 	}
-	//log.Printf("TCPConnection.closefd id=%v name=%v", s.id, s.name)
+	log.Printf("TCPConnection.close => %v", s.name)
 	if c, ok := s.conn.(net.Conn); ok {
 		c.Close()
 	} else if c, ok := s.conn.(*websocket.Conn); ok {

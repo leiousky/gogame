@@ -92,20 +92,20 @@ func (s *Processor) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
 func (s *Processor) newConnection(c interface{}, channel transmit.IChannel) {
 	connID := conn.NewConnID()
 	if p, ok := c.(net.Conn); ok {
-		//localAddr := p.LocalAddr().String()
+		localAddr := p.LocalAddr().String()
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("_%v#%v", peerAddr, connID),
+			s.name+fmt.Sprintf("#%v->%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KClient,
 			channel)
 	} else if p, ok := c.(*websocket.Conn); ok {
-		//localAddr := p.LocalAddr().String()
+		localAddr := p.LocalAddr().String()
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("_%v#%v", peerAddr, connID),
+			s.name+fmt.Sprintf("#%v->%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KClient,
 			channel)

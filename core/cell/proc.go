@@ -47,9 +47,9 @@ type IProc interface {
 	SetDispatcher(c IProc)
 	GetDispatcher() IProc
 	/// 执行空闲回调
-	Exec(cb func())
+	Exec(f func(args ...interface{}), args ...interface{})
 	/// 添加空闲回调
-	Append(cb func())
+	Append(f func(args ...interface{}), args ...interface{})
 	/// 任务轮询(定时任务/网络任务/自定义任务/空闲任务)
 	Run()
 	/// 退出处理
@@ -73,7 +73,7 @@ type Proc struct {
 	timerWheel timer.TimerWheel  //时间轮盘
 	dispatcher IProc             //分派任务到其他IProc
 	args       []interface{}     //任务参数
-	funcs      []func()          //空闲回调
+	funcs      []cb.Functor      //空闲回调
 	lock       *sync.RWMutex
 	timerv2    *timerv2.SafeTimerScheduel //协程安全定时器
 	selectQ    int
@@ -250,18 +250,18 @@ func (s *Proc) AssertInThread() bool {
 }
 
 /// 执行空闲回调
-func (s *Proc) Exec(cb func()) {
+func (s *Proc) Exec(f func(args ...interface{}), args ...interface{}) {
 	if s.inThread() {
-		cb()
+		f(args...)
 	} else {
-		s.Append(cb)
+		s.Append(f, args...)
 	}
 }
 
 /// 添加空闲回调
-func (s *Proc) Append(cb func()) {
+func (s *Proc) Append(f func(args ...interface{}), args ...interface{}) {
 	s.lock.Lock()
-	s.funcs = append(s.funcs, cb)
+	s.funcs = append(s.funcs, cb.NewFunctor(f, args...))
 	s.lock.Unlock()
 	s.signal()
 }
@@ -284,9 +284,9 @@ func (s *Proc) signal() {
 }
 
 /// 执行空闲回调
-func (s *Proc) doFunctors() {
+func (s *Proc) call() {
 	s.AssertInThread()
-	var funcs []func()
+	var funcs []cb.Functor
 	{
 		s.lock.Lock()
 		if len(s.funcs) > 0 {
@@ -295,8 +295,8 @@ func (s *Proc) doFunctors() {
 		}
 		s.lock.Unlock()
 	}
-	for _, cb := range funcs {
-		cb()
+	for _, f := range funcs {
+		f.Call()
 	}
 }
 
@@ -334,7 +334,7 @@ EXIT:
 				if ok {
 					//log.Println("Proc.run_msQ timer.Poll ...")
 					timer.Poll(s.tid, worker.OnTimer)
-					//s.test001()
+					s.test001()
 				}
 				break
 			}
@@ -380,11 +380,8 @@ EXIT:
 		case _, ok := <-s.idle:
 			{
 				if ok {
-					//log.Println("Proc.run_msQ doFunctors...")
-					utils.SafeCall(
-						func() {
-							s.doFunctors()
-						})
+					//log.Println("Proc.run_msQ call...")
+					utils.SafeCall(s.call)
 				}
 				break
 			}
@@ -464,12 +461,9 @@ EXIT:
 				break
 			}
 		}
-		log.Println("doFunctors...")
+		//log.Println("Proc.run_msq call...")
 		//处理空闲回调
-		utils.SafeCall(
-			func() {
-				s.doFunctors()
-			})
+		utils.SafeCall(s.call)
 		if exit {
 			break EXIT
 		}
@@ -515,34 +509,9 @@ func (s *Proc) Quit() {
 }
 
 func (s *Proc) test001() {
-	s.Append(func() {
-		log.Printf("hello,func 1...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 2...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 3...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 4...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 5...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 6...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 7...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 8...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 9...")
-	})
-	s.Append(func() {
-		log.Printf("hello,func 10...")
-	})
+	for x := 0; x < 10; x++ {
+		s.Append(func(v ...interface{}) {
+			log.Printf("hello,world %v ...\n", v[0].(int))
+		}, x)
+	}
 }

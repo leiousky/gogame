@@ -2,6 +2,7 @@ package timerv2
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 
@@ -51,7 +52,7 @@ func TestCronV1(t *testing.T) {
 	c := cron.New()
 	c.Start()
 	err := c.AddFunc("0/5 * * * * ?", func() {
-		logger.Info("0/5 * * * * ?")
+		log.Printf("0/5 * * * * ?")
 	})
 	if err != nil {
 		t.Fatal("cron v1 addfunc error err=", err)

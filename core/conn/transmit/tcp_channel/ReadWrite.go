@@ -12,7 +12,7 @@ func ReadFull(conn net.Conn, buf []byte) error {
 	for {
 		n, err := conn.Read(buf[length:size])
 		if err != nil {
-			log.Print("tcp_channel.ReadFull : ", err)
+			//log.Print("tcp_channel.ReadFull : ", err)
 			return err
 		}
 		length += n
@@ -29,7 +29,7 @@ func WriteFull(conn net.Conn, buf []byte) error {
 	for {
 		n, err := conn.Write(buf[length:size])
 		if err != nil {
-			log.Print("WriteFull : ", err)
+			log.Print("tcp_channel.WriteFull : ", err)
 			return err
 		}
 		length += n

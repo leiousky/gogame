@@ -6,6 +6,24 @@ import (
 	"games/core/conn/transmit"
 )
 
+/// <summary>
+/// Functor 回调函数
+/// <summary>
+type Functor struct {
+	f    func(args ...interface{})
+	args []interface{}
+}
+
+func NewFunctor(f func(args ...interface{}), args ...interface{}) Functor {
+	s := Functor{f: f}
+	s.args = append(s.args, args...)
+	return s
+}
+
+func (s Functor) Call() {
+	s.f(s.args...)
+}
+
 /// 流协议解析
 type OnProtocol func(proto string) transmit.IChannel
 

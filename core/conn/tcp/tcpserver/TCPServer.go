@@ -103,7 +103,7 @@ func (s *Processor) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("_%v|%v#%v", localAddr, peerAddr, connID),
+			s.name+fmt.Sprintf("#%v<-%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KServer,
 			channel)
@@ -112,7 +112,7 @@ func (s *Processor) newConnection(c interface{}, channel transmit.IChannel) {
 		peerAddr := p.RemoteAddr().String()
 		s.peer = tcp.NewTCPConnection(
 			connID,
-			s.name+fmt.Sprintf("_%v|%v#%v", localAddr, peerAddr, connID),
+			s.name+fmt.Sprintf("#%v<-%v#%v", localAddr, peerAddr, connID),
 			c,
 			conn.KServer,
 			channel)

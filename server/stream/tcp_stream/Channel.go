@@ -3,7 +3,6 @@ package tcp_stream
 import (
 	"games/core/conn/transmit"
 	"games/core/conn/transmit/tcp_channel"
-	"log"
 	"net"
 )
 
@@ -26,7 +25,7 @@ func (s *Channel) OnRecv(conn interface{}) (msg interface{}, err error) {
 	buf := make([]byte, 4)
 	err = tcp_channel.ReadFull(c, buf)
 	if err != nil {
-		log.Fatalln("OnRecvMessage: ", err)
+		//log.Fatalln("OnRecv: ", err)
 		return nil, err
 	}
 	return buf, nil
