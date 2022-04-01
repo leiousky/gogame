@@ -47,9 +47,21 @@ type IProc interface {
 	SetDispatcher(c IProc)
 	GetDispatcher() IProc
 	/// 执行空闲回调
-	Exec(f func(args ...interface{}), args ...interface{})
-	/// 添加空闲回调
-	Append(f func(args ...interface{}), args ...interface{})
+	/// s.Exec(func(v ...interface{}) {
+	/// }, a, b, c)
+	//Exec(f func(args ...interface{}), args ...interface{})
+	/// 追加空闲回调
+	/// s.Append(func(v ...interface{}) {
+	/// }, a, b, c)
+	//Append(f func(args ...interface{}), args ...interface{})
+	/// 执行空闲回调
+	/// s.Exec(func(v interface{}) {
+	/// }, []interface{}{a, b, c})
+	Exec(f func(args interface{}), args interface{})
+	/// 追加空闲回调
+	/// s.Append(func(v interface{}) {
+	/// }, []interface{}{a, b, c})
+	Append(f func(args interface{}), args interface{})
 	/// 任务轮询(定时任务/网络任务/自定义任务/空闲任务)
 	Run()
 	/// 退出处理
@@ -250,18 +262,44 @@ func (s *Proc) AssertInThread() bool {
 }
 
 /// 执行空闲回调
-func (s *Proc) Exec(f func(args ...interface{}), args ...interface{}) {
+/// s.Exec(func(v ...interface{}) {
+/// }, a, b, c)
+// func (s *Proc) Exec(f func(args ...interface{}), args ...interface{}) {
+// 	if s.inThread() {
+// 		f(args...)
+// 	} else {
+// 		s.Append(f, args...)
+// 	}
+// }
+
+/// 追加空闲回调
+/// s.Append(func(v ...interface{}) {
+/// }, a, b, c)
+// func (s *Proc) Append(f func(args ...interface{}), args ...interface{}) {
+// 	s.lock.Lock()
+// 	s.funcs = append(s.funcs, cb.NewFunctor(f, args...))
+// 	s.lock.Unlock()
+// 	s.signal()
+// }
+
+/// 执行空闲回调
+/// s.Exec(func(v interface{}) {
+/// }, []interface{}{a, b, c})
+func (s *Proc) Exec(f func(args interface{}), args interface{}) {
 	if s.inThread() {
-		f(args...)
+		f(args)
 	} else {
-		s.Append(f, args...)
+		s.Append(f, args)
 	}
+
 }
 
-/// 添加空闲回调
-func (s *Proc) Append(f func(args ...interface{}), args ...interface{}) {
+/// 追加空闲回调
+/// s.Append(func(v interface{}) {
+/// }, []interface{}{a, b, c})
+func (s *Proc) Append(f func(args interface{}), args interface{}) {
 	s.lock.Lock()
-	s.funcs = append(s.funcs, cb.NewFunctor(f, args...))
+	s.funcs = append(s.funcs, cb.NewFunctor(f, args))
 	s.lock.Unlock()
 	s.signal()
 }
@@ -509,9 +547,13 @@ func (s *Proc) Quit() {
 }
 
 func (s *Proc) test001() {
-	for x := 0; x < 10; x++ {
-		s.Append(func(v ...interface{}) {
-			log.Printf("hello,world %v ...\n", v[0].(int))
-		}, x)
-	}
+	s.test002()
+}
+
+func (s *Proc) test002() {
+	log.Println("Proc.test002 ...")
+	s.Append(func(v interface{}) {
+		args := v.([]interface{})
+		log.Printf("%v %v %v ...\n", args[0].(int), args[1].(string), args[2].(float64))
+	}, []interface{}{1, "hello", 3.1415926})
 }
