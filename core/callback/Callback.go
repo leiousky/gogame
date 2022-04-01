@@ -23,6 +23,7 @@ type Functor struct {
 // 	return s
 // }
 
+/// func(v interface{}){}, []interface{}{a, b, c}
 func NewFunctor(f func(args interface{}), args interface{}) Functor {
 	s := Functor{f: f, args: args}
 	return s
