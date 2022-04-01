@@ -50,7 +50,7 @@ func (s *TCPClient) ConnectTCP(address string) {
 	s.c.ConnectTCP(address)
 }
 
-func (s *TCPClient) OnConnection(peer conn.Session) {
+func (s *TCPClient) OnConnection(peer conn.Session, reason conn.Reason) {
 	if peer.Connected() {
 		log.Print("--- *** TCPClient - TCPClient:: OnConnected \n")
 	} else {

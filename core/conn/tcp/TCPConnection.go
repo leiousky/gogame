@@ -29,6 +29,7 @@ type TCPConnection struct {
 	Wg              sync.WaitGroup
 	closing         int64
 	state           conn.State
+	reason          conn.Reason
 	onConnection    cb.OnConnection
 	onMessage       cb.OnMessage
 	onWriteComplete cb.OnWriteComplete
@@ -42,6 +43,7 @@ func NewTCPConnection(id int64, name string, c interface{}, connType conn.Type, 
 		name:     name,
 		conn:     c,
 		state:    conn.KDisconnected,
+		reason:   conn.KNoError,
 		connType: connType,
 		context:  map[int]interface{}{},
 		msq:      msq.NewBlockVecMsq(),
@@ -59,6 +61,10 @@ func (s *TCPConnection) Name() string {
 
 func (s *TCPConnection) setState(state conn.State) {
 	s.state = state
+}
+
+func (s *TCPConnection) setReason(reason conn.Reason) {
+	s.reason = reason
 }
 
 func (s *TCPConnection) Connected() bool {
@@ -109,10 +115,6 @@ func (s *TCPConnection) Type() conn.Type {
 	return s.connType
 }
 
-func (s *TCPConnection) SetChannel(channel transmit.IChannel) {
-	s.channel = channel
-}
-
 func (s *TCPConnection) SetContext(key int, val interface{}) {
 	if val != nil {
 		s.context[key] = val
@@ -154,7 +156,7 @@ func (s *TCPConnection) ConnectEstablished() {
 	go s.readLoop()
 	go s.writeLoop()
 	if s.onConnection != nil {
-		s.onConnection(s)
+		s.onConnection(s, s.reason)
 	}
 }
 
@@ -164,7 +166,7 @@ func (s *TCPConnection) ConnectDestroyed() {
 	}
 	s.setState(conn.KDisconnected)
 	if s.onConnection != nil {
-		s.onConnection(s)
+		s.onConnection(s, s.reason)
 	}
 }
 
@@ -180,6 +182,8 @@ func (s *TCPConnection) readLoop() {
 			// 		s.errorCallback(err)
 			// 	}
 			// }
+			//本端异常关闭
+			//s.setReason(conn.KSelfExcept)
 			break
 		}
 		if msg == nil {
@@ -189,16 +193,17 @@ func (s *TCPConnection) readLoop() {
 			s.onMessage(s, msg, utils.TimeNow())
 		}
 	}
-	//对端关闭连接
 	if 0 == atomic.LoadInt64(&s.closing) {
+		//对端关闭连接
+		s.setReason(conn.KPeerClosed)
 		//通知写退出
 		s.msq.Push(nil)
 	}
 	//等待写退出
 	s.Wg.Wait()
-	//if s.closeCallback != nil {
-	//	s.closeCallback(s)
-	//}
+	// if s.closeCallback != nil {
+	// 	s.closeCallback(s)
+	// }
 	s.conn = nil
 }
 
@@ -215,6 +220,8 @@ func (s *TCPConnection) writeLoop() {
 					if s.errorCallback != nil {
 						s.errorCallback(err)
 					}
+					//本端异常关闭
+					//s.setReason(conn.KSelfExcept)
 				}
 				//break
 			}
@@ -226,6 +233,10 @@ func (s *TCPConnection) writeLoop() {
 			break
 		}
 	}
+	//TCPServer.removeConnection ->
+	//Sessions.Remove() ->
+	//TCPConnection.ConnectDestroyed ->
+	//TCPConnection.close
 	if s.closeCallback != nil {
 		s.closeCallback(s)
 	}
@@ -234,13 +245,16 @@ func (s *TCPConnection) writeLoop() {
 	s.Wg.Done()
 }
 
+/// 写数据
 func (s *TCPConnection) Write(msg interface{}) {
 	s.msq.Push(msg)
 }
 
+/// 关闭连接
 func (s *TCPConnection) Close() {
-	//本端关闭连接
 	if 0 == atomic.SwapInt64(&s.closing, 1) && s.conn != nil {
+		//本端正常关闭
+		s.setReason(conn.KSelfClosed)
 		//通知写退出
 		s.msq.Push(nil)
 	}

@@ -24,7 +24,7 @@ type TCPClient interface {
 	Session() conn.Session
 	Write(msg interface{})
 	ConnectTCP(address string)
-	OnConnection(peer conn.Session)
+	OnConnection(peer conn.Session, reason conn.Reason)
 	OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
 	OnWriteComplete(peer conn.Session)
 	Reconnect(d time.Duration)
@@ -137,7 +137,7 @@ func (s *Processor) ConnectTCP(address string) {
 	s.c.ConnectTCP(address)
 }
 
-func (s *Processor) OnConnection(peer conn.Session) {
+func (s *Processor) OnConnection(peer conn.Session, reason conn.Reason) {
 	if peer.Connected() {
 		log.Print("--- *** TCPClient - TCPClient:: OnConnected \n")
 	} else {

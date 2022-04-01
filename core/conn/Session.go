@@ -1,15 +1,12 @@
 package conn
 
-import (
-	"games/core/conn/transmit"
-)
-
 type Reason uint8
 
 const (
-	KPeerClosed Reason = Reason(0) //对端关闭
-	KSelfClosed Reason = Reason(1) //本端关闭
-	KSelfExcept Reason = Reason(2) //本端异常
+	KNoError    Reason = Reason(0)
+	KPeerClosed Reason = Reason(1) //对端关闭连接
+	KSelfClosed Reason = Reason(2) //本端正常关闭
+	KSelfExcept Reason = Reason(3) //本端异常关闭
 )
 
 type State uint8
@@ -38,9 +35,8 @@ type Session interface {
 	Conn() interface{}
 	LocalAddr() string
 	RemoteAddr() string
-	SetChannel(channel transmit.IChannel)
 	SetContext(key int, val interface{})
 	GetContext(key int) interface{}
-	Close()
 	Write(msg interface{})
+	Close()
 }

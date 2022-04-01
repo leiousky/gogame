@@ -21,7 +21,7 @@ import (
 /// <summary>
 type TCPServer interface {
 	ListenTCP(address string)
-	OnConnection(peer conn.Session)
+	OnConnection(peer conn.Session, reason conn.Reason)
 	OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
 	OnWriteComplete(peer conn.Session)
 	Stop()
@@ -140,7 +140,7 @@ func (s *Processor) onProtocol(proto string) transmit.IChannel {
 	panic(errors.New("no proto setup"))
 }
 
-func (s *Processor) OnConnection(peer conn.Session) {
+func (s *Processor) OnConnection(peer conn.Session, reason conn.Reason) {
 	if peer.Connected() {
 		log.Print("--- *** TCPServer - TCPServer:: OnConnected \n")
 	} else {

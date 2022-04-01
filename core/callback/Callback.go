@@ -42,7 +42,7 @@ type OnCondition func(conn interface{}) bool
 
 type OnNewConnection func(conn interface{}, channel transmit.IChannel)
 
-type OnConnection func(peer conn.Session)
+type OnConnection func(peer conn.Session, reason conn.Reason)
 
 type OnMessage func(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
 

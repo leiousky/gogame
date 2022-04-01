@@ -46,7 +46,7 @@ func (s *TCPServer) OnCondition(c interface{}) bool {
 	return true
 }
 
-func (s *TCPServer) OnConnection(peer conn.Session) {
+func (s *TCPServer) OnConnection(peer conn.Session, reason conn.Reason) {
 	if peer.Connected() {
 		log.Print("--- *** TCPServer - TCPServer:: OnConnected \n")
 	} else {
