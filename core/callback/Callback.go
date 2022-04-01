@@ -27,7 +27,7 @@ func (s Functor) Call() {
 /// 流协议解析
 type OnProtocol func(proto string) transmit.IChannel
 
-/// 接受连接检查
+/// 接受新连接判断
 type OnCondition func(conn interface{}) bool
 
 type OnNewConnection func(conn interface{}, channel transmit.IChannel)
