@@ -13,6 +13,7 @@ type ISessions interface {
 	Count() int
 	Add(peer Session) bool
 	Remove(peer Session)
+	RemoveAll()
 	Wait()
 	Stop()
 }
@@ -25,6 +26,7 @@ type Sessions struct {
 	l     *sync.Mutex
 	c     *sync.Cond
 	stop  bool
+	done  bool
 }
 
 func NewSessions() ISessions {
@@ -69,25 +71,32 @@ func (s *Sessions) Remove(peer Session) {
 		log.Printf("Sessions.Remove => %v", peer.Name())
 		delete(s.peers, peer.ID())
 	}
-	s.l.Unlock()
-}
-
-func (s *Sessions) removeAll(stop bool) {
-	s.l.Lock()
-	for _, peer := range s.peers {
-		peer.Close()
-	}
-	s.peers = map[int64]Session{}
-	if stop {
-		s.stop = true
+	if s.stop && len(s.peers) == 0 {
+		s.done = true
 		s.c.Signal()
 	}
 	s.l.Unlock()
 }
 
+/// s.removeAll -> peer.Close -> s.Remove
+func (s *Sessions) removeAll(stop bool) {
+	s.l.Lock()
+	if stop {
+		s.stop = true
+	}
+	for _, peer := range s.peers {
+		peer.Close()
+	}
+	s.l.Unlock()
+}
+
+func (s *Sessions) RemoveAll() {
+	s.removeAll(false)
+}
+
 func (s *Sessions) Wait() {
 	s.l.Lock()
-	for !s.stop {
+	for !s.done {
 		s.c.Wait()
 	}
 	s.l.Unlock()
