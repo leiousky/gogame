@@ -91,14 +91,14 @@ func (s *TCPConnection) RemoteAddr() string {
 
 func (s *TCPConnection) IsWebsocket() bool {
 	if s.conn == nil {
-		return false
+		panic(errors.New("s.conn == nil"))
 	}
 	if _, ok := s.conn.(net.Conn); ok {
 		return false
 	} else if _, ok := s.conn.(*websocket.Conn); ok {
 		return true
 	}
-	return false
+	panic(errors.New("s.conn error"))
 }
 
 func (s *TCPConnection) Conn() interface{} {
