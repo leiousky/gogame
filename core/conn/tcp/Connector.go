@@ -17,6 +17,9 @@ import (
 /// Connector TCP连接器
 /// <summary>
 type Connector interface {
+	Retry(bool)
+	IsRetry() bool
+	ServerAddr() string
 	ConnectTCP(address string) string
 	Reconnect(d time.Duration)
 	SetProtocolCallback(cb cb.OnProtocol)
@@ -27,13 +30,30 @@ type Connector interface {
 /// Connector TCP连接器
 /// <summary>
 type connector struct {
+	name            string
+	address         string
+	addrType        string
+	retry           bool
+	d               time.Duration
 	onProtocol      cb.OnProtocol
 	onNewConnection cb.OnNewConnection
 }
 
-func NewConnector() Connector {
-	s := &connector{}
+func NewConnector(name string) Connector {
+	s := &connector{name: name}
 	return s
+}
+
+func (s *connector) Retry(bv bool) {
+	s.retry = bv
+}
+
+func (s *connector) IsRetry() bool {
+	return s.retry
+}
+
+func (s *connector) ServerAddr() string {
+	return s.address
 }
 
 func (s *connector) SetProtocolCallback(cb cb.OnProtocol) {
@@ -44,24 +64,26 @@ func (s *connector) SetNewConnectionCallback(cb cb.OnNewConnection) {
 	s.onNewConnection = cb
 }
 
-func (s *connector) connectTCP(address string) int {
+func (s *connector) connectTCPTimeout(address string, d time.Duration) int {
 	if s.onProtocol == nil {
 		panic(errors.New("connector.connectTCP s.onProtocol == nil"))
 	}
 	if s.onNewConnection == nil {
 		panic(errors.New("connector.connectTCP s.onNewConnection == nil"))
 	}
-	c, err := net.DialTimeout("tcp", address, 3*time.Second)
+	c, err := net.DialTimeout("tcp", address, d)
 	if err != nil {
-		log.Println(err)
+		//log.Println(err)
 		return 1
 	}
+	s.address = address
+	s.addrType = "tcp"
 	channel := s.onProtocol("tcp")
 	s.onNewConnection(c, channel)
 	return 0
 }
 
-func (s *connector) connectWS(address string) int {
+func (s *connector) connectWSTimeout(address string, d time.Duration) int {
 	if s.onProtocol == nil {
 		panic(errors.New("connector.connectWS s.onProtocol == nil"))
 	}
@@ -75,28 +97,52 @@ func (s *connector) connectWS(address string) int {
 	}
 	dialer := websocket.Dialer{}
 	dialer.Proxy = http.ProxyFromEnvironment
-	dialer.HandshakeTimeout = 3 * time.Second
+	dialer.HandshakeTimeout = d
 	proto := strings.Trim(vec[0], ":")
 	host := vec[1]
 	//log.Printf("ConnectTCP %v://%v\n", proto, host)
 	u := url.URL{Scheme: proto, Host: host, Path: "/"}
 	c, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Println(err)
+		//log.Println(err)
 		return 1
 	}
+	s.address = address
+	s.addrType = "ws"
 	channel := s.onProtocol("ws")
 	s.onNewConnection(c, channel)
 	return 0
 }
 
-func (s *connector) ConnectTCP(address string) string {
-	if s.connectWS(address) == -1 {
-		s.connectTCP(address)
+func (s *connector) connectTimeout(address string, d time.Duration) string {
+	if s.connectWSTimeout(address, d) == -1 {
+		s.connectTCPTimeout(address, d)
 		return "tcp"
 	}
 	return "ws"
 }
 
+func (s *connector) ConnectTCP(address string) string {
+	return s.connectTimeout(address, 3*time.Second)
+}
+
+func (s *connector) reconnect() {
+	log.Printf("--- *** connector[%v] - Reconnecting to %v \n", s.name, s.address)
+	switch s.addrType {
+	case "tcp":
+		if s.retry && 1 == s.connectTCPTimeout(s.address, 3*time.Second) {
+			time.AfterFunc(s.d, s.reconnect)
+		}
+		break
+	case "ws":
+		if s.retry && 1 == s.connectWSTimeout(s.address, 3*time.Second) {
+			time.AfterFunc(s.d, s.reconnect)
+		}
+		break
+	}
+}
+
 func (s *connector) Reconnect(d time.Duration) {
+	s.d = d
+	time.AfterFunc(d, s.reconnect)
 }

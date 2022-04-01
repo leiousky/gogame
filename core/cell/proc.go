@@ -547,7 +547,7 @@ func (s *Proc) Quit() {
 }
 
 func (s *Proc) test001() {
-	s.test002()
+	//s.test002()
 }
 
 func (s *Proc) test002() {

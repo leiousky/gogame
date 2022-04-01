@@ -51,13 +51,17 @@ type Processor struct {
 func NewTCPClient(name string) TCPClient {
 	s := &Processor{
 		name: name,
-		c:    tcp.NewConnector()}
+		c:    tcp.NewConnector(name)}
 	s.c.SetProtocolCallback(s.onProtocol)
 	s.c.SetNewConnectionCallback(s.newConnection)
 	s.SetConnectionCallback(s.OnConnection)
 	s.SetMessageCallback(s.OnMessage)
 	s.SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
+}
+
+func (s *Processor) Retry(bv bool) {
+	s.c.Retry(bv)
 }
 
 func (s *Processor) Session() conn.Session {
@@ -156,10 +160,13 @@ func (s *Processor) OnWriteComplete(peer conn.Session) {
 func (s *Processor) removeConnection(peer conn.Session) {
 	sessions.Remove(peer)
 	peer.(*tcp.TCPConnection).ConnectDestroyed()
+	if s.c.IsRetry() {
+		s.c.Reconnect(time.Second)
+	}
 }
 
 func (s *Processor) onConnectionError(err error) {
-	log.Print("--- *** TCPClient - TCPClient:: onConnectionError \n")
+	log.Printf("--- *** TCPClient - TCPClient:: onConnectionError \n")
 }
 
 func (s *Processor) Reconnect(d time.Duration) {
