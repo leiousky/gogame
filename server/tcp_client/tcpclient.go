@@ -9,22 +9,23 @@ import (
 	"games/server/stream/tcp_stream"
 	"games/server/stream/ws_stream"
 	"log"
+	"time"
 )
 
 /// <summary>
 /// TCPClient TCP客户端
 /// <summary>
 type TCPClient struct {
-	tcpclient.ITCPClient
-	c tcpclient.ITCPClient
+	//tcpclient.TCPClient
+	c tcpclient.TCPClient
 }
 
-func NewTCPClient(name string) tcpclient.ITCPClient {
+func NewTCPClient(name string) tcpclient.TCPClient {
 	s := &TCPClient{c: tcpclient.NewTCPClient(name)}
-	s.c.(*tcpclient.TCPClient).SetProtocolCallback(s.onProtocol)
-	s.c.(*tcpclient.TCPClient).SetConnectionCallback(s.OnConnection)
-	s.c.(*tcpclient.TCPClient).SetMessageCallback(s.OnMessage)
-	s.c.(*tcpclient.TCPClient).SetWriteCompleteCallback(s.OnWriteComplete)
+	s.c.(*tcpclient.Processor).SetProtocolCallback(s.onProtocol)
+	s.c.(*tcpclient.Processor).SetConnectionCallback(s.OnConnection)
+	s.c.(*tcpclient.Processor).SetMessageCallback(s.OnMessage)
+	s.c.(*tcpclient.Processor).SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
 }
 
@@ -36,6 +37,14 @@ func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
 		return ws_stream.NewChannel()
 	}
 	panic(errors.New("no proto setup"))
+}
+
+func (s *TCPClient) Session() conn.Session {
+	return s.c.Session()
+}
+
+func (s *TCPClient) Write(msg interface{}) {
+	s.c.Write(msg)
 }
 
 func (s *TCPClient) ConnectTCP(address string) {
@@ -56,4 +65,12 @@ func (s *TCPClient) OnMessage(peer conn.Session, msg interface{}, recvTime utils
 
 func (s *TCPClient) OnWriteComplete(peer conn.Session) {
 	log.Print("--- *** TCPClient - TCPClient:: OnWriteComplete \n")
+}
+
+func (s *TCPClient) Reconnect(d time.Duration) {
+	s.c.Reconnect(d)
+}
+
+func (s *TCPClient) Disconnect() {
+	s.c.Disconnect()
 }

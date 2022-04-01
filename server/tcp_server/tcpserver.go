@@ -15,17 +15,17 @@ import (
 /// TCPServer TCP服务端
 /// <summary>
 type TCPServer struct {
-	tcpserver.ITCPServer
-	c tcpserver.ITCPServer
+	//tcpserver.TCPServer
+	c tcpserver.TCPServer
 }
 
-func NewTCPServer(name string) tcpserver.ITCPServer {
+func NewTCPServer(name string) tcpserver.TCPServer {
 	s := &TCPServer{c: tcpserver.NewTCPServer(name)}
-	s.c.(*tcpserver.TCPServer).SetProtocolCallback(s.onProtocol)
-	s.c.(*tcpserver.TCPServer).SetConditionCallback(s.OnCondition)
-	s.c.(*tcpserver.TCPServer).SetConnectionCallback(s.OnConnection)
-	s.c.(*tcpserver.TCPServer).SetMessageCallback(s.OnMessage)
-	s.c.(*tcpserver.TCPServer).SetWriteCompleteCallback(s.OnWriteComplete)
+	s.c.(*tcpserver.Processor).SetProtocolCallback(s.onProtocol)
+	s.c.(*tcpserver.Processor).SetConditionCallback(s.OnCondition)
+	s.c.(*tcpserver.Processor).SetConnectionCallback(s.OnConnection)
+	s.c.(*tcpserver.Processor).SetMessageCallback(s.OnMessage)
+	s.c.(*tcpserver.Processor).SetWriteCompleteCallback(s.OnWriteComplete)
 	return s
 }
 
@@ -61,4 +61,8 @@ func (s *TCPServer) OnMessage(peer conn.Session, msg interface{}, recvTime utils
 
 func (s *TCPServer) OnWriteComplete(peer conn.Session) {
 	log.Print("--- *** TCPServer - TCPServer:: OnWriteComplete \n")
+}
+
+func (s *TCPServer) Stop() {
+	s.c.Stop()
 }

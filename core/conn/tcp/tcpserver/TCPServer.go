@@ -17,9 +17,9 @@ import (
 )
 
 /// <summary>
-/// ITCPServer TCP服务端
+/// TCPServer TCP服务端
 /// <summary>
-type ITCPServer interface {
+type TCPServer interface {
 	ListenTCP(address string)
 	OnConnection(peer conn.Session)
 	OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp)
@@ -33,9 +33,9 @@ type ITCPServer interface {
 var sessions = conn.NewSessions()
 
 /// <summary>
-/// TCPServer TCP服务端
+/// Processor TCP服务端
 /// <summary>
-type TCPServer struct {
+type Processor struct {
 	name            string
 	peer            conn.Session
 	acceptor        tcp.Acceptor
@@ -45,8 +45,8 @@ type TCPServer struct {
 	onWriteComplete cb.OnWriteComplete
 }
 
-func NewTCPServer(name string) ITCPServer {
-	s := &TCPServer{
+func NewTCPServer(name string) TCPServer {
+	s := &Processor{
 		name:     name,
 		acceptor: tcp.NewAcceptor()}
 	s.acceptor.SetProtocolCallback(s.onProtocol)
@@ -58,45 +58,45 @@ func NewTCPServer(name string) ITCPServer {
 	return s
 }
 
-func (s *TCPServer) SetProtocolCallback(cb cb.OnProtocol) {
+func (s *Processor) SetProtocolCallback(cb cb.OnProtocol) {
 	if s.acceptor == nil {
 		panic(errors.New("TCPServer SetProtocolCallback s.acceptor == nil"))
 	}
 	s.acceptor.SetProtocolCallback(cb)
 }
 
-func (s *TCPServer) SetConditionCallback(cb cb.OnCondition) {
+func (s *Processor) SetConditionCallback(cb cb.OnCondition) {
 	if s.acceptor == nil {
 		panic(errors.New("TCPServer SetConditionCallback s.acceptor == nil"))
 	}
 	s.acceptor.SetConditionCallback(cb)
 }
 
-func (s *TCPServer) SetConnectionCallback(cb cb.OnConnection) {
+func (s *Processor) SetConnectionCallback(cb cb.OnConnection) {
 	s.onConnection = cb
 }
 
-func (s *TCPServer) SetMessageCallback(cb cb.OnMessage) {
+func (s *Processor) SetMessageCallback(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *TCPServer) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
+func (s *Processor) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
 	s.onWriteComplete = cb
 }
 
-func (s *TCPServer) ListenTCP(address string) {
+func (s *Processor) ListenTCP(address string) {
 	s.acceptor.ListenTCP(address)
 }
 
-func (s *TCPServer) Stop() {
+func (s *Processor) Stop() {
 	s.acceptor.Close()
 }
 
-func (s *TCPServer) OnCondition(c interface{}) bool {
+func (s *Processor) OnCondition(c interface{}) bool {
 	return true
 }
 
-func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
+func (s *Processor) newConnection(c interface{}, channel transmit.IChannel) {
 	connID := conn.NewConnID()
 	if p, ok := c.(net.Conn); ok {
 		localAddr := p.LocalAddr().String()
@@ -130,7 +130,7 @@ func (s *TCPServer) newConnection(c interface{}, channel transmit.IChannel) {
 	}
 }
 
-func (s *TCPServer) onProtocol(proto string) transmit.IChannel {
+func (s *Processor) onProtocol(proto string) transmit.IChannel {
 	switch proto {
 	case "tcp":
 		return tcp_channel.NewChannel()
@@ -140,7 +140,7 @@ func (s *TCPServer) onProtocol(proto string) transmit.IChannel {
 	panic(errors.New("no proto setup"))
 }
 
-func (s *TCPServer) OnConnection(peer conn.Session) {
+func (s *Processor) OnConnection(peer conn.Session) {
 	if peer.Connected() {
 		log.Print("--- *** TCPServer - TCPServer:: OnConnected \n")
 	} else {
@@ -148,19 +148,19 @@ func (s *TCPServer) OnConnection(peer conn.Session) {
 	}
 }
 
-func (s *TCPServer) OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp) {
+func (s *Processor) OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp) {
 	log.Print("--- *** TCPServer - TCPServer:: OnMessage \n")
 }
 
-func (s *TCPServer) OnWriteComplete(peer conn.Session) {
+func (s *Processor) OnWriteComplete(peer conn.Session) {
 	log.Print("--- *** TCPServer - TCPServer:: OnWriteComplete \n")
 }
 
-func (s *TCPServer) removeConnection(peer conn.Session) {
+func (s *Processor) removeConnection(peer conn.Session) {
 	sessions.Remove(peer)
 	peer.(*tcp.TCPConnection).ConnectDestroyed()
 }
 
-func (s *TCPServer) onConnectionError(err error) {
+func (s *Processor) onConnectionError(err error) {
 	log.Print("--- *** TCPServer - TCPServer:: onConnectionError \n")
 }

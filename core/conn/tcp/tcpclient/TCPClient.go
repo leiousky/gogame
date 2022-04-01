@@ -18,9 +18,9 @@ import (
 )
 
 /// <summary>
-/// ITCPClient TCP客户端
+/// TCPClient TCP客户端
 /// <summary>
-type ITCPClient interface {
+type TCPClient interface {
 	Session() conn.Session
 	Write(msg interface{})
 	ConnectTCP(address string)
@@ -37,9 +37,9 @@ type ITCPClient interface {
 var sessions = conn.NewSessions()
 
 /// <summary>
-/// TCPClient TCP客户端
+/// Processor TCP客户端
 /// <summary>
-type TCPClient struct {
+type Processor struct {
 	name            string
 	peer            conn.Session
 	c               tcp.Connector
@@ -48,8 +48,8 @@ type TCPClient struct {
 	onWriteComplete cb.OnWriteComplete
 }
 
-func NewTCPClient(name string) ITCPClient {
-	s := &TCPClient{
+func NewTCPClient(name string) TCPClient {
+	s := &Processor{
 		name: name,
 		c:    tcp.NewConnector()}
 	s.c.SetProtocolCallback(s.onProtocol)
@@ -60,36 +60,36 @@ func NewTCPClient(name string) ITCPClient {
 	return s
 }
 
-func (s *TCPClient) Session() conn.Session {
+func (s *Processor) Session() conn.Session {
 	return s.peer
 }
 
-func (s *TCPClient) Write(msg interface{}) {
+func (s *Processor) Write(msg interface{}) {
 	if s.peer != nil {
 		s.peer.Write(msg)
 	}
 }
 
-func (s *TCPClient) SetProtocolCallback(cb cb.OnProtocol) {
+func (s *Processor) SetProtocolCallback(cb cb.OnProtocol) {
 	if s.c == nil {
 		panic(errors.New("TCPClient SetProtocolCallback s.c == nil"))
 	}
 	s.c.SetProtocolCallback(cb)
 }
 
-func (s *TCPClient) SetConnectionCallback(cb cb.OnConnection) {
+func (s *Processor) SetConnectionCallback(cb cb.OnConnection) {
 	s.onConnection = cb
 }
 
-func (s *TCPClient) SetMessageCallback(cb cb.OnMessage) {
+func (s *Processor) SetMessageCallback(cb cb.OnMessage) {
 	s.onMessage = cb
 }
 
-func (s *TCPClient) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
+func (s *Processor) SetWriteCompleteCallback(cb cb.OnWriteComplete) {
 	s.onWriteComplete = cb
 }
 
-func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
+func (s *Processor) newConnection(c interface{}, channel transmit.IChannel) {
 	connID := conn.NewConnID()
 	if p, ok := c.(net.Conn); ok {
 		//localAddr := p.LocalAddr().String()
@@ -123,7 +123,7 @@ func (s *TCPClient) newConnection(c interface{}, channel transmit.IChannel) {
 	}
 }
 
-func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
+func (s *Processor) onProtocol(proto string) transmit.IChannel {
 	switch proto {
 	case "tcp":
 		return tcp_channel.NewChannel()
@@ -133,11 +133,11 @@ func (s *TCPClient) onProtocol(proto string) transmit.IChannel {
 	panic(errors.New("no proto setup"))
 }
 
-func (s *TCPClient) ConnectTCP(address string) {
+func (s *Processor) ConnectTCP(address string) {
 	s.c.ConnectTCP(address)
 }
 
-func (s *TCPClient) OnConnection(peer conn.Session) {
+func (s *Processor) OnConnection(peer conn.Session) {
 	if peer.Connected() {
 		log.Print("--- *** TCPClient - TCPClient:: OnConnected \n")
 	} else {
@@ -145,28 +145,28 @@ func (s *TCPClient) OnConnection(peer conn.Session) {
 	}
 }
 
-func (s *TCPClient) OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp) {
+func (s *Processor) OnMessage(peer conn.Session, msg interface{}, recvTime utils.Timestamp) {
 	log.Print("--- *** TCPClient - TCPClient:: OnMessage \n")
 }
 
-func (s *TCPClient) OnWriteComplete(peer conn.Session) {
+func (s *Processor) OnWriteComplete(peer conn.Session) {
 	log.Print("--- *** TCPClient - TCPClient:: OnWriteComplete \n")
 }
 
-func (s *TCPClient) removeConnection(peer conn.Session) {
+func (s *Processor) removeConnection(peer conn.Session) {
 	sessions.Remove(peer)
 	peer.(*tcp.TCPConnection).ConnectDestroyed()
 }
 
-func (s *TCPClient) onConnectionError(err error) {
+func (s *Processor) onConnectionError(err error) {
 	log.Print("--- *** TCPClient - TCPClient:: onConnectionError \n")
 }
 
-func (s *TCPClient) Reconnect(d time.Duration) {
+func (s *Processor) Reconnect(d time.Duration) {
 	s.c.Reconnect(d)
 }
 
-func (s *TCPClient) Disconnect() {
+func (s *Processor) Disconnect() {
 	if s.peer != nil {
 		s.peer.Close()
 	}
