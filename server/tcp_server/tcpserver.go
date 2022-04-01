@@ -15,7 +15,6 @@ import (
 /// TCPServer TCP服务端
 /// <summary>
 type TCPServer struct {
-	//tcpserver.TCPServer
 	c tcpserver.TCPServer
 }
 

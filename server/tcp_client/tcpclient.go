@@ -16,7 +16,6 @@ import (
 /// TCPClient TCP客户端
 /// <summary>
 type TCPClient struct {
-	//tcpclient.TCPClient
 	c tcpclient.TCPClient
 }
 
