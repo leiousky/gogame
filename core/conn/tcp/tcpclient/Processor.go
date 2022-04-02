@@ -142,7 +142,7 @@ func (s *Processor) removeConnection(peer conn.Session) {
 	sessions.Remove(peer)
 	peer.(*tcp.TCPConnection).ConnectDestroyed()
 	if s.c.Retry() {
-		s.c.Reconnect(time.Second)
+		s.c.Reconnect(time.Millisecond * 500)
 	}
 }
 
