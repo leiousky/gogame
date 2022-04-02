@@ -25,7 +25,7 @@ func NewTCPClient(name string) tcpclient.TCPClient {
 	s.c.(*tcpclient.Processor).SetConnectionCallback(s.OnConnection)
 	s.c.(*tcpclient.Processor).SetMessageCallback(s.OnMessage)
 	s.c.(*tcpclient.Processor).SetWriteCompleteCallback(s.OnWriteComplete)
-	s.c.(*tcpclient.Processor).Retry(true)
+	s.c.(*tcpclient.Processor).EnableRetry(true)
 	return s
 }
 

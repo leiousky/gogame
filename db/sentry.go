@@ -48,10 +48,10 @@ type SentryCreator struct {
 	cell.IWorkerCreator
 }
 
-func (s *SentryCreator) Create(c cell.IProc) cell.IWorker {
-	return newEntry(c)
-}
-
 func NewSentryCreator() cell.IWorkerCreator {
 	return &SentryCreator{}
+}
+
+func (s *SentryCreator) Create(c cell.IProc) cell.IWorker {
+	return newEntry(c)
 }

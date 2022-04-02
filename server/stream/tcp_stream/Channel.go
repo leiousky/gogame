@@ -1,6 +1,9 @@
 package tcp_stream
 
 import (
+	"errors"
+	"games/comm/utils"
+	"games/core/conn/def"
 	"games/core/conn/transmit"
 	"games/core/conn/transmit/tcp_channel"
 	"net"
@@ -16,19 +19,19 @@ func NewChannel() transmit.IChannel {
 	return &Channel{}
 }
 
-func (s *Channel) OnRecv(conn interface{}) (msg interface{}, err error) {
+func (s *Channel) OnRecv(conn interface{}) (interface{}, error, def.Reason) {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
-		return nil, nil
+		panic(errors.New("tcp_stream.OnRecv conn == nil"))
 	}
 	//len+CRC，4字节
 	buf := make([]byte, 4)
-	err = tcp_channel.ReadFull(c, buf)
+	err := tcp_channel.ReadFull(c, buf)
 	if err != nil {
 		//log.Fatalln("OnRecv: ", err)
-		return nil, err
+		return nil, err, def.KClosed
 	}
-	return buf, nil
+	return buf, nil, def.KNoError
 	// //len，2字节
 	// len := binary.LittleEndian.Uint16(buf[:2])
 	// //CRC，2字节
@@ -70,12 +73,13 @@ func (s *Channel) OnRecv(conn interface{}) (msg interface{}, err error) {
 	// return msg, err
 }
 
-func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
+func (s *Channel) OnSend(conn interface{}, msg interface{}) (error, def.Reason) {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
-		return nil
+		panic(errors.New("tcp_stream.OnSend conn == nil"))
 	}
-	return nil
+	buf, _ := utils.ToBytes(msg)
+	return tcp_channel.WriteFull(c, buf), def.KNoError
 	// log.Println("MyTCPChannel::OnSendMessage\n", msg)
 	// h, ok := msg.(*Msg)
 	// if !ok || h == nil {

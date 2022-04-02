@@ -3,6 +3,7 @@ package tcp_channel
 import (
 	"errors"
 	"games/comm/utils"
+	"games/core/conn/def"
 	"games/core/conn/transmit"
 
 	"net"
@@ -18,24 +19,24 @@ func NewChannel() transmit.IChannel {
 	return &Channel{}
 }
 
-func (s *Channel) OnRecv(conn interface{}) (msg interface{}, err error) {
+func (s *Channel) OnRecv(conn interface{}) (interface{}, error, def.Reason) {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
 		panic(errors.New("tcp_channel.OnRecv conn == nil"))
 	}
 	buf := make([]byte, 512)
-	err = ReadFull(c, buf)
+	err := ReadFull(c, buf)
 	if err != nil {
-		return nil, err
+		return nil, err, def.KClosed
 	}
-	return buf, nil
+	return buf, nil, def.KNoError
 }
 
-func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
+func (s *Channel) OnSend(conn interface{}, msg interface{}) (error, def.Reason) {
 	c, ok := conn.(net.Conn)
 	if !ok || c == nil {
 		panic(errors.New("tcp_channel.OnSend conn == nil"))
 	}
 	buf, _ := utils.ToBytes(msg)
-	return WriteFull(c, buf)
+	return WriteFull(c, buf), def.KNoError
 }

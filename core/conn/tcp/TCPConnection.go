@@ -5,6 +5,7 @@ import (
 	"games/comm/utils"
 	cb "games/core/callback"
 	"games/core/conn"
+	"games/core/conn/def"
 	"games/core/conn/transmit"
 	"games/core/msq"
 	"log"
@@ -174,7 +175,7 @@ func (s *TCPConnection) ConnectDestroyed() {
 func (s *TCPConnection) readLoop() {
 	utils.CheckPanic()
 	for {
-		msg, err := s.channel.OnRecv(s.conn)
+		msg, err, reason := s.channel.OnRecv(s.conn)
 		if err != nil {
 			//log.Println("readLoop: ", err)
 			// if !IsEOFOrReadError(err) {
@@ -182,29 +183,37 @@ func (s *TCPConnection) readLoop() {
 			// 		s.errorCallback(err)
 			// 	}
 			// }
-			//本端异常关闭
-			//s.setReason(conn.KSelfExcept)
-			break
-		}
-		if msg == nil {
-			log.Fatalln("readLoop: msg == nil")
-		}
-		if s.onMessage != nil {
+			if reason == def.KExcept {
+				//本端异常关闭
+				s.setReason(conn.KSelfExcept)
+				//通知写退出
+				s.msq.Push(nil)
+				break
+			} else if 0 == atomic.LoadInt64(&s.closing) {
+				//对端关闭连接
+				s.setReason(conn.KPeerClosed)
+				//通知写退出
+				s.msq.Push(nil)
+				break
+			} else if reason == def.KClosed {
+				//本端正常关闭
+				s.setReason(conn.KSelfClosed)
+				break
+			} else if s.errorCallback != nil {
+				s.errorCallback(err)
+			}
+		} else if msg == nil {
+			panic(errors.New("readLoop: msg == nil"))
+		} else if s.onMessage != nil {
 			s.onMessage(s, msg, utils.TimeNow())
 		}
-	}
-	if 0 == atomic.LoadInt64(&s.closing) {
-		//对端关闭连接
-		s.setReason(conn.KPeerClosed)
-		//通知写退出
-		s.msq.Push(nil)
 	}
 	//等待写退出
 	s.Wg.Wait()
 	// if s.closeCallback != nil {
 	// 	s.closeCallback(s)
 	// }
-	s.conn = nil
+	// s.conn = nil
 }
 
 /// 写协程
@@ -213,7 +222,7 @@ func (s *TCPConnection) writeLoop() {
 	for {
 		msgs, exit := s.msq.Pick()
 		for _, msg := range msgs {
-			err := s.channel.OnSend(s.conn, msg)
+			err, _ := s.channel.OnSend(s.conn, msg)
 			if err != nil {
 				log.Println("writeLoop: ", err)
 				if !transmit.IsEOFOrWriteError(err) {
@@ -224,8 +233,7 @@ func (s *TCPConnection) writeLoop() {
 					//s.setReason(conn.KSelfExcept)
 				}
 				//break
-			}
-			if s.onWriteComplete != nil {
+			} else if s.onWriteComplete != nil {
 				s.onWriteComplete(s)
 			}
 		}

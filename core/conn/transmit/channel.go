@@ -1,6 +1,7 @@
 package transmit
 
 import (
+	"games/core/conn/def"
 	"io"
 	"net"
 )
@@ -10,9 +11,9 @@ import (
 /// <summary>
 type IChannel interface {
 	/// 接收数据
-	OnRecv(conn interface{}) (msg interface{}, err error)
+	OnRecv(conn interface{}) (interface{}, error, def.Reason)
 	/// 发送数据
-	OnSend(conn interface{}, msg interface{}) error
+	OnSend(conn interface{}, msg interface{}) (error, def.Reason)
 }
 
 func IsEOFOrReadError(err error) bool {

@@ -17,8 +17,8 @@ import (
 /// Connector TCP连接器
 /// <summary>
 type Connector interface {
-	Retry(bool)
-	IsRetry() bool
+	Retry() bool
+	EnableRetry(bool)
 	ServerAddr() string
 	ConnectTCP(address string) string
 	Reconnect(d time.Duration)
@@ -44,12 +44,12 @@ func NewConnector(name string) Connector {
 	return s
 }
 
-func (s *connector) Retry(bv bool) {
-	s.retry = bv
+func (s *connector) Retry() bool {
+	return s.retry
 }
 
-func (s *connector) IsRetry() bool {
-	return s.retry
+func (s *connector) EnableRetry(bv bool) {
+	s.retry = bv
 }
 
 func (s *connector) ServerAddr() string {
@@ -71,6 +71,7 @@ func (s *connector) connectTCPTimeout(address string, d time.Duration) int {
 	if s.onNewConnection == nil {
 		panic(errors.New("connector.connectTCP s.onNewConnection == nil"))
 	}
+	//log.Printf("ConnectTCP %v://%v\n", "tcp", address)
 	c, err := net.DialTimeout("tcp", address, d)
 	if err != nil {
 		//log.Println(err)
@@ -100,8 +101,8 @@ func (s *connector) connectWSTimeout(address string, d time.Duration) int {
 	dialer.HandshakeTimeout = d
 	proto := strings.Trim(vec[0], ":")
 	host := vec[1]
-	//log.Printf("ConnectTCP %v://%v\n", proto, host)
 	u := url.URL{Scheme: proto, Host: host, Path: "/"}
+	//log.Printf("ConnectTCP %v://%v\n", proto, host)
 	c, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
 		//log.Println(err)
@@ -123,19 +124,19 @@ func (s *connector) connectTimeout(address string, d time.Duration) string {
 }
 
 func (s *connector) ConnectTCP(address string) string {
-	return s.connectTimeout(address, 3*time.Second)
+	return s.connectTimeout(address, time.Second)
 }
 
 func (s *connector) reconnect() {
 	log.Printf("--- *** connector[%v] - Reconnecting to %v \n", s.name, s.address)
 	switch s.addrType {
 	case "tcp":
-		if s.retry && 1 == s.connectTCPTimeout(s.address, 3*time.Second) {
+		if 1 == s.connectTCPTimeout(s.address, time.Second) && s.retry {
 			time.AfterFunc(s.d, s.reconnect)
 		}
 		break
 	case "ws":
-		if s.retry && 1 == s.connectWSTimeout(s.address, 3*time.Second) {
+		if 1 == s.connectWSTimeout(s.address, time.Second) && s.retry {
 			time.AfterFunc(s.d, s.reconnect)
 		}
 		break
@@ -144,5 +145,5 @@ func (s *connector) reconnect() {
 
 func (s *connector) Reconnect(d time.Duration) {
 	s.d = d
-	time.AfterFunc(d, s.reconnect)
+	time.AfterFunc(s.d, s.reconnect)
 }

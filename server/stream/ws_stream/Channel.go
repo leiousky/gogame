@@ -2,6 +2,9 @@ package ws_stream
 
 import (
 	"encoding/binary"
+	"errors"
+	"games/comm/utils"
+	"games/core/conn/def"
 	"games/core/conn/transmit"
 	"log"
 
@@ -18,29 +21,29 @@ func NewChannel() transmit.IChannel {
 	return &Channel{}
 }
 
-func (s *Channel) OnRecv(conn interface{}) (interface{}, error) {
+func (s *Channel) OnRecv(conn interface{}) (interface{}, error, def.Reason) {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
-		return nil, nil
+		panic(errors.New("ws_stream.OnRecv conn == nil"))
 	}
 	//len+CRC，4字节
 	//conn.SetReadLimit(4)
 	msgType, buf, err := c.ReadMessage()
 	if err != nil {
-		//log.Println("OnRecvMessage ReadMessage: ", err)
-		return nil, err
+		return nil, err, def.KClosed
 	}
 	//TextMessage/BinaryMessage
 	if websocket.BinaryMessage != msgType {
 		log.Fatalln("OnRecvMessage: msgType error")
-		return nil, nil
+		return nil, errors.New("ws_stream.OnRecv parse error"), def.KExcept
 	}
 	//len，2字节
 	length := binary.LittleEndian.Uint16(buf[:2])
 	if length != uint16(len(buf)) {
 		log.Fatalln("OnRecvMessage: checklen error")
-		return nil, nil
+		return nil, errors.New("ws_stream.OnRecv parse error"), def.KExcept
 	}
+	return buf, nil, def.KNoError
 	//CRC，2字节
 	//chsum := binary.LittleEndian.Uint16(buf[2:])
 	// 读取剩余大小
@@ -101,20 +104,20 @@ func (s *Channel) OnRecv(conn interface{}) (interface{}, error) {
 	// } else {
 	// 	msg.Data = buf[18:]
 	// }
-	return nil, err
 }
 
-func (s *Channel) OnSend(conn interface{}, msg interface{}) error {
+func (s *Channel) OnSend(conn interface{}, msg interface{}) (error, def.Reason) {
 	c, ok := conn.(*websocket.Conn)
 	if !ok || c == nil {
-		return nil
+		panic(errors.New("ws_stream.OnSend conn == nil"))
 	}
+	buf, _ := utils.ToBytes(msg)
+	return c.WriteMessage(websocket.BinaryMessage, buf), def.KNoError
 	//log.Println("MyWSChannel::OnSendMessage ", msg)
 	// h, ok := msg.(*Msg)
 	// if !ok || h == nil {
 	// 	return nil
 	// }
-	return nil
 	// data, _, err := codec.EncodeMessage(h.msg, nil)
 	// if err != nil {
 	// 	log.Fatalln("EncodeMessage : ", err)
