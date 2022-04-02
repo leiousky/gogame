@@ -7,7 +7,7 @@ import (
 )
 
 /// <summary>
-/// IChannel 消息传输接口
+/// IChannel 消息传输接口(流协议读写解析)
 /// <summary>
 type IChannel interface {
 	/// 接收数据

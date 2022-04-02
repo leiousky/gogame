@@ -10,7 +10,7 @@ import (
 )
 
 /// <summary>
-/// Channel WS传输
+/// Channel websocket协议读写解析
 /// <summary>
 type Channel struct {
 }
