@@ -49,11 +49,11 @@ type IProc interface {
 	/// 执行空闲回调
 	/// s.Exec(func(v ...interface{}) {
 	/// }, a, b, c)
-	//Exec(f func(args ...interface{}), args ...interface{})
+	// Exec(f func(args ...interface{}), args ...interface{})
 	/// 追加空闲回调
 	/// s.Append(func(v ...interface{}) {
 	/// }, a, b, c)
-	//Append(f func(args ...interface{}), args ...interface{})
+	// Append(f func(args ...interface{}), args ...interface{})
 	/// 执行空闲回调
 	/// s.Exec(func(v interface{}) {
 	/// }, []interface{}{a, b, c})
