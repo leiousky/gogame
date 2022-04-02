@@ -291,7 +291,6 @@ func (s *Proc) Exec(f func(args interface{}), args interface{}) {
 	} else {
 		s.Append(f, args)
 	}
-
 }
 
 /// 追加空闲回调
