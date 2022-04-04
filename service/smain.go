@@ -18,7 +18,7 @@ func newMain(s *Sentry) *sMain {
 		handlers: cb.CmdCallbacks{}}
 }
 
-func (s *sMain) initModules(args ...interface{}) {
+func (s *sMain) initModules() {
 	//CreateTimer
 	//CancelTimer
 	//CreatCronFunc

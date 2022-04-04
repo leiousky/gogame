@@ -10,14 +10,14 @@ type Sentry struct {
 	main *sMain
 }
 
-func newEntry(c cell.IProc) cell.IWorker {
+func newEntry(c cell.IProc, args ...interface{}) cell.IWorker {
 	p := &Sentry{c: c}
 	p.main = newMain(p)
 	return p
 }
 
-func (s *Sentry) OnInit(args ...interface{}) {
-	s.main.initModules(args...)
+func (s *Sentry) OnInit() {
+	s.main.initModules()
 }
 
 func (s *Sentry) OnTick() {
@@ -52,6 +52,6 @@ func NewSentryCreator() cell.IWorkerCreator {
 	return &SentryCreator{}
 }
 
-func (s *SentryCreator) Create(c cell.IProc) cell.IWorker {
-	return newEntry(c)
+func (s *SentryCreator) Create(c cell.IProc, args ...interface{}) cell.IWorker {
+	return newEntry(c, args...)
 }

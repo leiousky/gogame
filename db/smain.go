@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"games/comm/utils"
 	cb "games/core/callback"
 	"games/core/conn"
@@ -18,8 +17,7 @@ func newMain(s *Sentry) *sMain {
 		handlers: cb.CmdCallbacks{}}
 }
 
-func (s *sMain) initModules(args ...interface{}) {
-	fmt.Println("数据库初始化")
+func (s *sMain) initModules() {
 }
 
 func (s *sMain) OnTick() {

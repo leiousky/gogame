@@ -44,9 +44,10 @@ type Slot struct {
 	sta     int32
 }
 
-func NewMsgSlot(d time.Duration, size int, creator cell.IWorkerCreator) ISlot {
-	s := &Slot{d: d, size: size, creator: creator, lock: &sync.Mutex{}}
+func NewMsgSlot(d time.Duration, size int, creator cell.IWorkerCreator, args ...interface{}) ISlot {
+	s := &Slot{d: d, size: size, creator: creator, args: args, lock: &sync.Mutex{}}
 	s.cond = sync.NewCond(s.lock)
+	// s.args = append(s.args, args...)
 	return s
 }
 

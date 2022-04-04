@@ -5,7 +5,6 @@ import (
 	"games/comm/utils"
 	cb "games/core/callback"
 	"games/core/conn"
-	"games/core/msq"
 	"games/core/timer"
 	timerv2 "games/core/timerv2"
 	"log"
@@ -72,29 +71,21 @@ type IProc interface {
 /// Proc 单元业务处理器实现
 /// <summary>
 type Proc struct {
-	msQ        chan interface{}
-	l          *sync.Mutex
-	idle       chan bool
-	closed     bool
-	tid        uint32            //协程ID
-	msq        msq.MsgQueue      //任务队列
-	worker     IWorker           //任务处理
-	ticker     *time.Ticker      //滴答时钟
-	trigger    <-chan time.Time  //定时触发器
-	timer      timer.ScopedTimer //内置局部定时器，线程安全
-	timerWheel timer.TimerWheel  //时间轮盘
-	dispatcher IProc             //分派任务到其他IProc
-	args       []interface{}     //任务参数
-	funcs      []cb.Functor      //空闲回调
-	lock       *sync.RWMutex
+	tid        uint32                     //协程ID
+	msq        chan interface{}           //任务队列
+	l          *sync.Mutex                //入队上锁
+	idle       chan bool                  //空闲任务
+	lock       *sync.RWMutex              //入队上锁
+	closed     [2]bool                    //关闭标识
+	funcs      []cb.Functor               //空闲回调
+	worker     IWorker                    //任务处理
+	ticker     *time.Ticker               //滴答时钟
+	trigger    <-chan time.Time           //定时触发器
+	timer      timer.ScopedTimer          //内置局部定时器，线程安全
+	timerWheel timer.TimerWheel           //时间轮盘
+	dispatcher IProc                      //分派任务到其他IProc
 	timerv2    *timerv2.SafeTimerScheduel //协程安全定时器
-	selectQ    int
 }
-
-const (
-	TmsQ int = int(0)
-	Tmsq int = int(1)
-)
 
 /// NewProc()执行必须在Run()的go协程中调用，不然tid获取不对
 func NewProc(d time.Duration, size int, creator IWorkerCreator, args ...interface{}) IProc {
@@ -111,20 +102,17 @@ func NewProc(d time.Duration, size int, creator IWorkerCreator, args ...interfac
 		return ticker.C
 	}(ticker, d)
 	s := &Proc{
-		msQ:     make(chan interface{}, 1000),
+		tid:     utils.GoroutineID(),
+		msq:     make(chan interface{}, 1000),
 		l:       &sync.Mutex{},
 		idle:    make(chan bool, 1),
+		lock:    &sync.RWMutex{},
 		ticker:  ticker,
 		trigger: trigger,
-		tid:     utils.GoroutineID(),
-		msq:     msq.NewFreeVecMsq(),
-		lock:    &sync.RWMutex{},
-		timerv2: timerv2.NewSafeTimerScheduel(),
-		selectQ: TmsQ}
-	s.worker = creator.Create(s)                           //线程局部worker
+		timerv2: timerv2.NewSafeTimerScheduel()}
+	s.worker = creator.Create(s, args...)                  //线程局部worker
 	s.timerWheel = timer.NewTimerWheel(s.tid, int32(size)) //指定时间轮大小
 	s.timer = timer.NewScopedTimer(s.tid)                  //线程局部定时器
-	s.args = append(s.args, args...)                       //worker初始化参数
 	return s
 }
 
@@ -165,44 +153,38 @@ func (s *Proc) GetDispatcher() IProc {
 
 /// 添加任务
 func (s *Proc) AddTask(data *Event) {
-	switch s.selectQ {
-	case TmsQ:
-		s.push(data)
-		break
-	case Tmsq:
-		s.msq.Push(data)
-		break
-	}
+	s.push(data)
 }
 
 func (s *Proc) push(data interface{}) {
-	if len(s.msQ) == cap(s.msQ) {
-		panic(fmt.Sprintf("pid[%v]msQ is full", s.tid))
+	if len(s.msq) == cap(s.msq) {
+		panic(fmt.Sprintf("[%v]Proc.push msq is full", s.tid))
 	}
 	s.l.Lock()
 	if data == nil {
-		if !s.closed {
+		if !s.closed[0] {
 			select {
-			case s.msQ <- data:
+			case s.msq <- data:
 				break
 			default:
 				break
 			}
-			close(s.msQ)
-			s.closed = true
+			close(s.msq)
+			s.closed[0] = true
 		} else {
-			panic(fmt.Sprintf("pid[%v]msQ repeat close", s.tid))
+			panic(fmt.Sprintf("[%v]Proc.push msq repeat close", s.tid))
 		}
 	} else {
-		if !s.closed {
+		if !s.closed[0] {
 			select {
-			case s.msQ <- data:
+			case s.msq <- data:
 				break
 			default:
+				//默认case防止msq满时阻塞
 				break
 			}
 		} else {
-			panic(fmt.Sprintf("pid[%v]msQ is closed", s.tid))
+			panic(fmt.Sprintf("[%v]Proc.push msq is closed", s.tid))
 		}
 	}
 	s.l.Unlock()
@@ -278,8 +260,8 @@ func (s *Proc) AssertInThread() bool {
 // func (s *Proc) Append(f func(args ...interface{}), args ...interface{}) {
 // 	s.lock.Lock()
 // 	s.funcs = append(s.funcs, cb.NewFunctor(f, args...))
+// 	s.signal(false)
 // 	s.lock.Unlock()
-// 	s.signal()
 // }
 
 /// 执行空闲回调
@@ -299,24 +281,39 @@ func (s *Proc) Exec(f func(args interface{}), args interface{}) {
 func (s *Proc) Append(f func(args interface{}), args interface{}) {
 	s.lock.Lock()
 	s.funcs = append(s.funcs, cb.NewFunctor(f, args))
+	s.signal(false)
 	s.lock.Unlock()
-	s.signal()
 }
 
-func (s *Proc) signal() {
-	switch s.selectQ {
-	case TmsQ:
-		select {
-		case s.idle <- true:
-			break
-		default:
-			//默认case防止连续调用多次Append()时阻塞
-			break
+func (s *Proc) signal(stop bool) {
+	// if len(s.idle) == cap(s.idle) {
+	// 	panic(fmt.Sprintf("[%v]Proc.signal idle is full", s.tid))
+	// }
+	if stop {
+		if !s.closed[1] {
+			// select {
+			// case s.idle <- false:
+			// 	break
+			// default:
+			// 	break
+			// }
+			close(s.idle)
+			s.closed[1] = true
+		} else {
+			panic(fmt.Sprintf("[%v]Proc.signal idle repeat close", s.tid))
 		}
-		break
-	case Tmsq:
-		s.msq.Signal()
-		break
+	} else {
+		if !s.closed[1] {
+			select {
+			case s.idle <- true:
+				break
+			default:
+				//默认case防止连续调用多次Append()时阻塞
+				break
+			}
+		} else {
+			panic(fmt.Sprintf("[%v]Proc.signal idle is closed", s.tid))
+		}
 	}
 }
 
@@ -339,22 +336,15 @@ func (s *Proc) call() {
 
 /// 任务轮询(定时任务/网络任务/自定义任务/空闲任务)
 func (s *Proc) Run() {
-	switch s.selectQ {
-	case TmsQ:
-		s.run_msQ()
-		break
-	case Tmsq:
-		s.run_msq()
-		break
-	}
+	s.run_msq()
 }
 
-func (s *Proc) run_msQ() {
+func (s *Proc) run_msq() {
 	s.AssertInThread()
 	utils.CheckPanic()
 	worker := s.worker
 	timer := s.timer
-	worker.OnInit(s.args...)
+	worker.OnInit()
 	i, t := 0, 200 //CPU分片
 EXIT:
 	for {
@@ -363,28 +353,29 @@ EXIT:
 			runtime.Gosched()
 		}
 		i++
-		//log.Println("Proc.run_msQ ...")
+		//log.Printf("[%v]Proc.run_msq ...", s.tid)
 		select {
 		//定时任务
 		case _, ok := <-s.trigger:
 			{
 				if ok {
-					//log.Println("Proc.run_msQ timer.Poll ...")
+					//log.Printf("[%v]Proc.run_msq timer.Poll ...", s.tid)
 					timer.Poll(s.tid, worker.OnTimer)
 					s.test001()
 				}
 				break
 			}
 		//定时任务
-		case tick, ok := <-s.timerv2.Do():
+		case c, ok := <-s.timerv2.Do():
 			{
 				if ok {
-					utils.SafeCall(tick.Call)
+					//log.Printf("[%v]Proc.run_msq c.Call ...", s.tid)
+					utils.SafeCall(c.Call)
 				}
 				break
 			}
 		//网络任务/自定义任务
-		case msg, ok := <-s.msQ:
+		case msg, ok := <-s.msq:
 			{
 				if ok {
 					if msg == nil {
@@ -417,7 +408,7 @@ EXIT:
 		case _, ok := <-s.idle:
 			{
 				if ok {
-					//log.Println("Proc.run_msQ call...")
+					//log.Printf("[%v]Proc.run_msq s.call...", s.tid)
 					utils.SafeCall(s.call)
 				}
 				break
@@ -428,85 +419,19 @@ EXIT:
 		}
 	}
 	s.cleanup()
-	log.Printf("proc run_msQ tid=%v exit...", s.tid)
+	log.Printf("[%v]Proc.run_msq exit...", s.tid)
 }
 
 func (s *Proc) cleanup() {
 	s.timer.RemoveTimers()
-	close(s.idle)
+	s.close_idle()
 	s.ticker.Stop()
 }
 
-func (s *Proc) run_msq() {
-	s.AssertInThread()
-	utils.CheckPanic()
-	worker := s.worker
-	timer := s.timer
-	worker.OnInit(s.args...)
-	s.msq.EnableNonBlocking(true)
-	flag := 0
-	exit := false
-	i, t := 0, 200 //CPU分片
-EXIT:
-	for {
-		if i > t {
-			i = 0
-			runtime.Gosched()
-		}
-		i++
-		//定时器轮询
-		//log.Printf("--- *** ----------------------------- [%05d]Run Poll begin...\n", s.tid)
-		timer.Poll(s.tid, worker.OnTimer)
-		//log.Printf("--- *** ----------------------------- [%05d]Run Poll end...\n", s.tid)
-		switch flag {
-		case 0:
-			{
-				//单条消息处理
-				msg, b := s.msq.Pop()
-				exit = b
-				if msg != nil && !exit {
-					if _, ok := msg.(*Event); ok {
-						//log.Printf("--- *** ----------------------------- [%05d]Run proc begin...\n", s.pid)
-						s.proc(msg.(*Event), worker)
-						//log.Printf("--- *** ----------------------------- [%05d]Run proc end...\n", s.pid)
-					}
-				}
-				if nil == msg && !exit {
-					//log.Printf("--- *** ----------------------------- [%05d]Run time.Sleep...\n", s.pid)
-					//time.Sleep(50 * time.Millisecond)
-					time.Sleep(0)
-				}
-				break
-			}
-		case 1:
-			{
-				//批量消息处理
-				msgs, b := s.msq.Pick()
-				exit = b
-				for _, msg := range msgs {
-					if _, ok := msg.(*Event); ok {
-						//log.Printf("--- *** ----------------------------- [%05d]Run proc begin...\n", s.pid)
-						s.proc(msg.(*Event), worker)
-						//log.Printf("--- *** ----------------------------- [%05d]Run proc end...\n", s.pid)
-					}
-				}
-				if 0 == len(msgs) && !exit {
-					//log.Printf("--- *** ----------------------------- [%05d]Run time.Sleep...\n", s.pid)
-					//time.Sleep(50 * time.Millisecond)
-					time.Sleep(0)
-				}
-				break
-			}
-		}
-		//log.Println("Proc.run_msq call...")
-		//处理空闲回调
-		utils.SafeCall(s.call)
-		if exit {
-			break EXIT
-		}
-	}
-	timer.RemoveTimers()
-	log.Printf("proc run_msq tid=%v exit...", s.tid)
+func (s *Proc) close_idle() {
+	s.lock.Lock()
+	s.signal(true)
+	s.lock.Unlock()
 }
 
 /// 处理任务队列
@@ -520,6 +445,7 @@ func (s *Proc) proc(data *Event, worker IWorker) {
 		} else {
 			worker.OnRead(ev.cmd, ev.msg, ev.peer)
 		}
+		break
 	case EVTCustom:
 		ev := data.obj.(*customEvent)
 		if ev.handler != nil {
@@ -527,6 +453,7 @@ func (s *Proc) proc(data *Event, worker IWorker) {
 		} else {
 			worker.OnCustom(ev.cmd, ev.msg, ev.peer)
 		}
+		break
 	}
 	if s.dispatcher != nil {
 		s.dispatcher.AddTask(data)
@@ -535,14 +462,7 @@ func (s *Proc) proc(data *Event, worker IWorker) {
 
 /// 退出处理
 func (s *Proc) Quit() {
-	switch s.selectQ {
-	case TmsQ:
-		s.push(nil)
-		break
-	case Tmsq:
-		s.msq.Push(nil)
-		break
-	}
+	s.push(nil)
 }
 
 func (s *Proc) test001() {
@@ -551,8 +471,10 @@ func (s *Proc) test001() {
 
 func (s *Proc) test002() {
 	log.Println("Proc.test002 ...")
-	s.Append(func(v interface{}) {
-		args := v.([]interface{})
-		log.Printf("%v %v %v ...\n", args[0].(int), args[1].(string), args[2].(float64))
-	}, []interface{}{1, "hello", 3.1415926})
+	for i := 1; i <= 10; i++ {
+		s.Append(func(v interface{}) {
+			args := v.([]interface{})
+			log.Printf("%v %v %v ...\n", args[0].(int), args[1].(string), args[2].(float64))
+		}, []interface{}{i, "hello", 3.1415926})
+	}
 }

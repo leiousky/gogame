@@ -8,7 +8,7 @@ import (
 /// IWorker 业务处理
 /// <summary>
 type IWorker interface {
-	OnInit(args ...interface{})
+	OnInit()
 	OnConnected(peer conn.Session)
 	OnClosed(peer conn.Session, reason conn.Reason)
 	OnRead(cmd uint32, msg interface{}, peer conn.Session)
@@ -20,5 +20,5 @@ type IWorker interface {
 /// IWorkerCreator 业务工厂
 /// <summary>
 type IWorkerCreator interface {
-	Create(c IProc) IWorker
+	Create(c IProc, args ...interface{}) IWorker
 }
